@@ -143,3 +143,35 @@ void close_x() {
 void redraw() {
     XClearWindow(dis, win);
 };
+
+
+void draw_triangle(struct Vec3* points,int index1,int index2,int index3)
+{
+    unsigned int width=0,height=0;
+    
+    {
+        Window root_return;
+        int x_return, y_return;
+        unsigned int border_width_return;
+        unsigned int depth_return;
+        XGetGeometry(dis,win,&root_return,
+                     &x_return,&y_return,
+                     &width,&height,
+                     &border_width_return,
+                     &depth_return);
+    }
+    
+    
+    struct Vec3 p1 = points[index1];
+    struct Vec3 p2 = points[index2];
+    struct Vec3 p3 = points[index3];
+    
+    XPoint v1 = (XPoint){.x=width*p1.x,.y=height*(1.0-p1.y)};
+    XPoint v2 = (XPoint){.x=width*p2.x,.y=height*(1.0-p2.y)};
+    XPoint v3 = (XPoint){.x=width*p3.x,.y=height*(1.0-p3.y)};
+    XPoint v4 = (XPoint){.x=width*p1.x,.y=height*(1.0-p1.y)};
+    
+    XPoint v[4] = {v1,v2,v3,v4};
+    
+    XFillPolygon(dis,win,gc,v,4,Convex,CoordModeOrigin);
+}

@@ -7,7 +7,6 @@
 #include <X11/Xutil.h>
 #include <X11/Xos.h>
 
-
 extern Display *dis;
 extern int screen;
 extern Window win;
@@ -15,6 +14,15 @@ extern GC gc;
 
 #define W_WIDTH 300
 #define W_HEIGHT 300
+
+struct Vec3
+{
+    double x,y,z;
+};
+
+
+#define VEC3(X,Y,Z) (struct Vec3){.x=(X),.y=(Y),.z=(Z)}
+
 
 
 /* here are our X routines declared! */
@@ -38,5 +46,6 @@ int32_t colorf(double red,double green,double blue);
 int32_t colori_delta_red(int32_t color,int32_t delta);
 int32_t colori_delta_green(int32_t color,int32_t delta);
 int32_t colori_delta_blue(int32_t color,int32_t delta);
+void draw_triangle(struct Vec3* points,int index1,int index2,int index3);
 
 #endif

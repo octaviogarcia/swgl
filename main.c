@@ -7,9 +7,12 @@
 
 #include "draw.h"
 
-
 int main (int argc,char ** argv) 
 {
+    
+    struct Vec3 points[] = { VEC3(0,0,0), VEC3(1,0,0), VEC3(0,1,0), VEC3(1,1,0), VEC3(0.5,1,0) };
+    int triangles[] = { 0,1,4 };
+    
     XEvent event;		/* the XEvent declaration !!! */
     KeySym key;		/* a dealie-bob to handle KeyPress Events */	
     char text[255];		/* a char buffer for KeyPress Events */
@@ -27,7 +30,7 @@ int main (int argc,char ** argv)
     while(1) 
     {		
         /* get the next event and stuff it into our event variable.
-           Note:  only events we set the mask for are detected!
+        Note:  only events we set the mask for are detected!
         */
         XNextEvent(dis, &event);
         
@@ -40,7 +43,7 @@ int main (int argc,char ** argv)
             XLookupString(&event.xkey,text,255,&key,0)==1) 
         {
             /* use the XLookupString routine to convert the invent
-               KeyPress data into regular text.  Weird but necessary...
+            KeyPress data into regular text.  Weird but necessary...
             */
             if (text[0]=='q') 
             {
@@ -115,6 +118,9 @@ int main (int argc,char ** argv)
             draw_mouse = false;
             //printf("set false\n");
         }
+        
+        XSetForeground(dis,gc,colori(255,255,255));
+        draw_triangle(points,0,1,4);
     }
 }
 
