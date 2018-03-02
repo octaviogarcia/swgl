@@ -1,0 +1,27 @@
+// el nombre de la gráfica es opcional, como lo son el punto y coma al final de la línea
+digraph pipeline {
+	Program->VertexShader [label="Triangle,TriangleAttributes"];
+    VertexShader -> TesselationShader [label="TransformedTriangle,VertexOutput"];
+	TesselationShader -> GeometryShader;
+	GeometryShader -> VertexPostProcesingShader;
+	VertexPostProcesingShader -> PrimitiveAssemblyShader;
+	PrimitiveAssemblyShader -> Rasterization [label="TransformedTriangle,VertexOutput"];
+	Rasterization -> FragmentShader [label="Fragment,InterpolatedVertexOutput"];
+	FragmentShader -> Screen [label=PixelValue];
+
+	Program -> VertexShader [label=VertexUniforms];
+	Program -> FragmentShader [label=FragmentUniforms];
+
+	Program;
+	VertexShader [shape=box];
+	TesselationShader [color=grey][shape=box][style=dotted];
+	GeometryShader [color=grey][shape=box][style=dotted];
+	VertexPostProcesingShader [color=grey][shape=box][style=dotted];
+	PrimitiveAssemblyShader [color=grey][shape=box][style=dotted];
+	Rasterization[shape=box];
+	FragmentShader[shape=box];
+	Screen;
+
+	
+
+}

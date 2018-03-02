@@ -7,6 +7,9 @@ int screen;
 Window win;
 GC gc;
 
+double scale_x = 1.0;
+double scale_y = 1.0;
+
 int32_t colori_set_red(int32_t color,char red)
 {
     color &= 0x0000FFFF;
@@ -145,31 +148,73 @@ void redraw() {
 };
 
 
-void draw_triangle(struct Vec3* points,int index1,int index2,int index3)
+void get_window_size(int* width,int* height)
+{
+    
+    Window root_return;
+    int x_return, y_return;
+    unsigned int border_width_return;
+    unsigned int depth_return;
+    XGetGeometry(dis,win,&root_return,
+                 &x_return,&y_return,
+                 width,height,
+                 &border_width_return,
+                 &depth_return);
+    
+}
+
+
+struct Vec4 crossProduct(struct Vec4 v1,struct Vec4 v2)
+{
+    /*
+    | i   j  k |
+    | x1 y1 z1 |
+    | x2 y2 z2 |
+    
+    y1*z2 - y2*z1
+    x2*z1 - x1*z2
+    x1*y2 - x2*y1
+    */
+    
+    double x1=v1.x;
+    double y1=v1.y;
+    double z1=v1.z;
+    double x2=v2.x;
+    double y2=v2.y;
+    double z2=v2.z;
+    
+    return VEC4(y1*z2-y2*z1,x2*z1-x1*z2,x1*y2-x2*y1,1.0);
+}
+double dotProduct(struct Vec4 v1,struct Vec4 v2)
+{
+    return v1.x*v2.x+v1.y*v2.y+v1.z*v2.z+v1.w*v2.w;
+}
+double division(struct Vec4 v1,struct Vec4 v2)
+{//https://physics.stackexchange.com/questions/111652/can-we-divide-two-vectors
+    double num = dotProduct(v1,v2);
+    double den = dotProduct(v1,v1);
+    return num/den;
+}
+
+void draw_triangle(struct Vec4* points,int index1,int index2,int index3)
 {
     unsigned int width=0,height=0;
     
-    {
-        Window root_return;
-        int x_return, y_return;
-        unsigned int border_width_return;
-        unsigned int depth_return;
-        XGetGeometry(dis,win,&root_return,
-                     &x_return,&y_return,
-                     &width,&height,
-                     &border_width_return,
-                     &depth_return);
-    }
+    get_window_size(&width,&height);
     
     
-    struct Vec3 p1 = points[index1];
-    struct Vec3 p2 = points[index2];
-    struct Vec3 p3 = points[index3];
     
-    XPoint v1 = (XPoint){.x=width*p1.x,.y=height*(1.0-p1.y)};
-    XPoint v2 = (XPoint){.x=width*p2.x,.y=height*(1.0-p2.y)};
-    XPoint v3 = (XPoint){.x=width*p3.x,.y=height*(1.0-p3.y)};
-    XPoint v4 = (XPoint){.x=width*p1.x,.y=height*(1.0-p1.y)};
+    struct Vec4 p1 = points[index1];
+    struct Vec4 p2 = points[index2];
+    struct Vec4 p3 = points[index3];
+    
+    double factorx = width/scale_x;
+    double factory = height/scale_y;
+    
+    XPoint v1 = (XPoint){.x=factorx*p1.x,.y=factory*(scale_y-p1.y)};
+    XPoint v2 = (XPoint){.x=factorx*p2.x,.y=factory*(scale_y-p2.y)};
+    XPoint v3 = (XPoint){.x=factorx*p3.x,.y=factory*(scale_y-p3.y)};
+    XPoint v4 = v1;
     
     XPoint v[4] = {v1,v2,v3,v4};
     
