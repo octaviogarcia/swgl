@@ -6,26 +6,36 @@
 #include <assert.h>
 
 #include "draw.h"
+#include <math.h>
+#include "math.h"
 
 
-//TODO: fix weird color interpolation issue
+
+
+float transform[4][4] = {
+    {1.0f,0.0f,0.0f,0.0f},
+    {0.0f,1.0f,0.0f,0.0f},
+    {0.0f,0.0f,1.0f,0.0f},
+    {0.0f,0.0f,0.0f,1.0f}};
+
 
 void* vertexShader(struct Vec4* vertex,void* attribute)
 {
+    *vertex = apply_matrix(transform,*vertex);
     return attribute;
 }
 
-int32_t fragmentShader(float fragx,float fragy,struct Vec4 triangle[3],float lambda0,float lambda1, float lambda2,void * vertexOut[3])
+struct Vec4 fragmentShader(float fragx,float fragy,struct Vec4 triangle[3],float lambda0,float lambda1, float lambda2,void * vertexOut[3])
 {
-    int32_t * p_color0 = vertexOut[0];
-    int32_t * p_color1 = vertexOut[1];
-    int32_t * p_color2 = vertexOut[2];
+    struct Vec4 color0 = *(struct Vec4*)vertexOut[0];
+    struct Vec4 color1 = *(struct Vec4*)vertexOut[1];
+    struct Vec4 color2 = *(struct Vec4*)vertexOut[2];
     
-    int32_t color0 = *p_color0;
-    int32_t color1 = *p_color1;
-    int32_t color2 = *p_color2;
+    struct Vec4 result = scale(lambda0,color0);
+    result = add(result,scale(lambda1,color1));
+    result = add(result,scale(lambda2,color2));
     
-    return lambda0*color0+lambda1*color1+lambda2*color2;;
+    return result;
 }
 
 int main (int argc,char ** argv) 
@@ -45,7 +55,9 @@ int main (int argc,char ** argv)
     int oldx = -1;
     int oldy = -1;
     
-    int32_t pointer_color = colori(0,0,0);
+    Color pointer_color = colori(0,0,0);
+    
+    int degrees = 0;
     
     /* look for events forever... */
     while(1) 
@@ -100,17 +112,30 @@ int main (int argc,char ** argv)
             }
             else if(text[0]=='d')
             {
-                int32_t colors[] = {colori(255,0,0),colori(0,255,0),colori(0,0,255)};
+                struct Vec4 colors[] = {VEC4(1,0,0,1),VEC4(0,1,0,1),VEC4(0,0,1,1)};
+                pipeline(points,0,1,2,colors,sizeof(typeof(colors[0])),0,1,2);
+            }
+            else if(text[0]=='c')
+            {
+                degrees+=1;
+                float angle = degrees*PI / 180.0f;
+                float cos_angle = cos(angle);
+                float sin_angle = sin(angle);
                 
-                pipeline(points,0,1,2,colors,sizeof(int32_t),0,1,2);
+                transform[0][0]=cos_angle;
+                transform[0][1]=-sin_angle;
+                transform[1][0]=sin_angle;
+                transform[1][1]=cos_angle;
+            }
+            else if(text[0]=='C')
+            {
+                redraw();
             }
             
-            
-            
             {
-                int32_t red = colori_get_red(pointer_color);
-                int32_t green = colori_get_green(pointer_color);
-                int32_t blue = colori_get_blue(pointer_color);
+                int32_t red = pointer_color.rgb.r;
+                int32_t green = pointer_color.rgb.g;
+                int32_t blue = pointer_color.rgb.b;
                 printf("R = %d G = %d B = %d\n",red,green,blue);
                 
                 /*XSetForeground(dis,gc,colori(255,255,255));
@@ -138,7 +163,7 @@ int main (int argc,char ** argv)
             if(oldx == -1) oldx = newx;
             if(oldy == -1) oldy = newy;
             
-            XSetForeground(dis,gc,pointer_color);
+            XSetForeground(dis,gc,pointer_color.integer);
             
             XDrawLine(dis,win,gc,oldx,oldy,newx,newy);
             
