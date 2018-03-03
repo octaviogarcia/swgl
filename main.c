@@ -4,13 +4,14 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <assert.h>
+#include <time.h>
 
 #include "draw.h"
 #include <math.h>
 #include "math.h"
 
 
-
+//TODO: maybe draw to a texture, and then send that to Xlib?
 
 float transform[4][4] = {
     {1.0f,0.0f,0.0f,0.0f},
@@ -50,70 +51,61 @@ int main (int argc,char ** argv)
     
     init_x();
     
-    bool draw_mouse = false;
+    bool mouse_clicked = false;
     
     int oldx = -1;
     int oldy = -1;
     
-    Color pointer_color = colori(0,0,0);
-    
     int degrees = 0;
     
+    
+    double dt = 1/30.0;
+    struct timespec tstart={0,0}, tend={0,0};
     /* look for events forever... */
     while(1) 
     {		
         /* get the next event and stuff it into our event variable.
         Note:  only events we set the mask for are detected!
         */
+        clock_gettime(CLOCK_MONOTONIC, &tstart);
         XNextEvent(dis, &event);
+        redraw();
+        if(dt < (1/30.0))
+        {
+            double diff = (1/30.0) - dt;
+            tstart.tv_nsec+=(diff*1000000000);
+            if(tstart.tv_nsec >= 1000000000) {
+                tstart.tv_nsec -= 1000000000;
+                tstart.tv_sec++;
+            }
+            clock_nanosleep(CLOCK_MONOTONIC,TIMER_ABSTIME,&tstart,NULL);
+        }
         
         if (event.type==Expose && event.xexpose.count==0) 
         {
             /* the window was exposed redraw it! */
-            
             get_window_size(&window_width_px,&window_height_px);
             deltax = 1.0f/window_width_px;
             deltay = 1.0f/window_height_px;
-            redraw();
         }
+        
+        screen_img = XGetImage(dis, win, 0,0, 
+                               window_width_px, window_width_px, AllPlanes,
+                               ZPixmap);
+        
+        
         if (event.type==KeyPress&&
             XLookupString(&event.xkey,text,255,&key,0)==1) 
         {
             /* use the XLookupString routine to convert the invent
             KeyPress data into regular text.  Weird but necessary...
             */
+            
+            double deltamov = 0.01f;
+            
             if (text[0]=='q') 
             {
                 close_x();
-            }
-            else if(text[0]=='r')
-            {
-                pointer_color = colori_delta_red(pointer_color,1);
-            }
-            else if(text[0]=='R')
-            {
-                pointer_color = colori_delta_red(pointer_color,-1);
-            }
-            else if(text[0]=='g')
-            {
-                pointer_color = colori_delta_green(pointer_color,1);
-            }
-            else if(text[0]=='G')
-            {
-                pointer_color = colori_delta_green(pointer_color,-1);
-            }
-            else if(text[0]=='b')
-            {
-                pointer_color = colori_delta_blue(pointer_color,1);
-            }
-            else if(text[0]=='B')
-            {
-                pointer_color = colori_delta_blue(pointer_color,-1);
-            }
-            else if(text[0]=='d')
-            {
-                struct Vec4 colors[] = {VEC4(1,0,0,1),VEC4(0,1,0,1),VEC4(0,0,1,1)};
-                pipeline(points,0,1,2,colors,sizeof(typeof(colors[0])),0,1,2);
             }
             else if(text[0]=='c')
             {
@@ -127,54 +119,79 @@ int main (int argc,char ** argv)
                 transform[1][0]=sin_angle;
                 transform[1][1]=cos_angle;
             }
-            else if(text[0]=='C')
+            else if(text[0]=='v')
             {
-                redraw();
+                degrees-=1;
+                float angle = degrees*PI / 180.0f;
+                float cos_angle = cos(angle);
+                float sin_angle = sin(angle);
+                
+                transform[0][0]=cos_angle;
+                transform[0][1]=-sin_angle;
+                transform[1][0]=sin_angle;
+                transform[1][1]=cos_angle;
             }
-            
+            else if(text[0]=='w')
             {
-                int32_t red = pointer_color.rgb.r;
-                int32_t green = pointer_color.rgb.g;
-                int32_t blue = pointer_color.rgb.b;
-                printf("R = %d G = %d B = %d\n",red,green,blue);
-                
-                /*XSetForeground(dis,gc,colori(255,255,255));
-                snprintf(text,254,"R = %d G = %d B = %d",red,green,blue);
-                XClearArea(dis,win,250,250,10,10,true);
-                XDrawString(dis,win,gc,250,250, text, strlen(text));
-                XSetForeground(dis,gc,pointer_color);*/
-                
+                transform[1][3]+=deltamov;
+            }
+            else if(text[0]=='s')
+            {
+                transform[1][3]-=deltamov;
+            }
+            else if(text[0]=='a')
+            {
+                transform[0][3]-=deltamov;
+            }
+            else if(text[0]=='d')
+            {
+                transform[0][3]+=deltamov;
+            }
+            else if(text[0]=='r')
+            {
+                transform[2][3]+=deltamov;
+            }
+            else if(text[0]=='f')
+            {
+                transform[2][3]-=deltamov;
             }
         }
-        if (event.type==ButtonPress && !draw_mouse) 
+        if (event.type==ButtonPress && !mouse_clicked) 
         {
-            draw_mouse = true;
+            mouse_clicked = true;
             oldx = event.xmotion.x;
             oldy = event.xmotion.y;
         }
         
         
-        if(draw_mouse && event.type == MotionNotify)
+        if(event.type == MotionNotify)
         {
             int newx=event.xmotion.x;
             int newy=event.xmotion.y;
             
-            
-            if(oldx == -1) oldx = newx;
-            if(oldy == -1) oldy = newy;
-            
-            XSetForeground(dis,gc,pointer_color.integer);
-            
-            XDrawLine(dis,win,gc,oldx,oldy,newx,newy);
+            newx = clamp(newx,0,window_width_px);
+            newy = clamp(newy,0,window_height_px);
             
             oldx = newx;
             oldy = newy;
         }
         
-        if (event.type==ButtonRelease && draw_mouse)
+        if (event.type==ButtonRelease && mouse_clicked)
         {
-            draw_mouse = false;
+            mouse_clicked = false;
         }
+        
+        struct Vec4 colors[] = {VEC4(1,0,0,1),VEC4(0,1,0,1),VEC4(0,0,1,1)};
+        pipeline(points,0,1,2,colors,sizeof(typeof(colors[0])),0,1,2);
+        
+        XPutImage(dis, win, gc, screen_img, 
+                  0, 0, 0, 0, 
+                  window_width_px, window_height_px);
+        
+        clock_gettime(CLOCK_MONOTONIC, &tend);
+        
+        dt =((double)tend.tv_sec + 1.0e-9*tend.tv_nsec) - 
+            ((double)tstart.tv_sec + 1.0e-9*tstart.tv_nsec);
     }
 }
 

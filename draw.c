@@ -15,6 +15,7 @@ int window_width_px=300;//update below pls if you change this
 int window_height_px=300;//update below pls if you change this
 float deltax = 1.0f/300;//divided by width
 float deltay = 1.0f/300;//divided by height
+XImage * screen_img = NULL;
 
 Color colori(uint8_t red,uint8_t green,uint8_t blue)
 {
@@ -247,9 +248,19 @@ void pipeline(struct Vec4* points,int index0,int index1,int index2,
                 c.rgb.b = clamp(pixel_color.z*255,0,255);
                 c.rgb.a = clamp(pixel_color.w*255,0,255);
                 
+                
                 XPoint pixel_coords = to_screen_coords(x,y);
-                XSetForeground(dis,gc,c.integer);
-                XDrawPoint(dis,win,gc,pixel_coords.x,pixel_coords.y);
+                
+                
+                pixel_coords.x = clamp(pixel_coords.x,0,window_width_px);
+                pixel_coords.y = clamp(pixel_coords.y,0,window_height_px);
+                
+                //XSetForeground(dis,gc,c.integer);
+                //XDrawPoint(dis,win,gc,pixel_coords.x,pixel_coords.y);
+                
+                XPutPixel(screen_img,
+                          pixel_coords.x,pixel_coords.y,
+                          c.integer);
             }
         }
     }

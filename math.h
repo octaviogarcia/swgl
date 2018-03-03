@@ -23,7 +23,7 @@ struct Vec4
 
 
 
-#define VEC2(X,Y)     (struct Vec2){.x=(X),.y=(Y)}
+#define VEC2(X,Y)     (struct Vec2){.Ox=(X),.y=(Y)}
 #define VEC3(X,Y,Z)   (struct Vec3){.x=(X),.y=(Y),.z=(Z)}
 #define VEC4(X,Y,Z,W) (struct Vec4){.x=(X),.y=(Y),.z=(Z),.w=(W)}
 

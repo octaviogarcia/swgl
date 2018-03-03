@@ -15,6 +15,8 @@ extern Display *dis;
 extern int screen;
 extern Window win;
 extern GC gc;
+extern XImage * screen_img;
+
 
 extern float scale_y;
 extern float scale_x;
