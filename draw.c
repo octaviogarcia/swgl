@@ -178,6 +178,13 @@ void pipeline(struct Vec4* points,int index0,int index1,int index2,
     //http://www.sunshine2k.de/coding/java/TriangleRasterization/TriangleRasterization.html
     //https://www.scratchapixel.com/lessons/3d-basic-rendering/rasterization-practical-implementation/rasterization-stage
     
+    //If its too close, dont draw...
+    if(triangle[0].z <= 0.05f) return;
+    if(triangle[1].z <= 0.05f) return;
+    if(triangle[2].z <= 0.05f) return;
+    if(triangle[0].z <= 0.05f) return;
+    //Should we do the same for too far?
+    
     triangle[0].x/=triangle[0].z;
     triangle[0].y/=triangle[0].z;
     triangle[0].z=1;
@@ -198,6 +205,7 @@ void pipeline(struct Vec4* points,int index0,int index1,int index2,
     float minX = minf(t0x, minf(t1x, t2x));
     float maxY = maxf(t0y, maxf(t1y, t2y));
     float minY = minf(t0y, minf(t1y, t2y));
+    
 #if 0
     printf("Vertex1 %f %f %f %f\n",t0x,t0y,triangle[0].z,triangle[0].w);
     printf("Vertex2 %f %f %f %f\n",t1x,t1y,triangle[1].z,triangle[1].w);
@@ -206,6 +214,7 @@ void pipeline(struct Vec4* points,int index0,int index1,int index2,
     printf("width %d height %d\n",window_width_px,window_height_px);
     printf("deltax %f deltay %f\n",deltax,deltay);
 #endif
+    
     //https://stackoverflow.com/questions/2049582/how-to-determine-if-a-point-is-in-a-2d-triangle
     //https://en.wikipedia.org/wiki/Barycentric_coordinate_system
     
@@ -220,11 +229,16 @@ void pipeline(struct Vec4* points,int index0,int index1,int index2,
     float lambda0_prime =  -(d1y2y*t2x  + d2x1x*t2y);
     float lambda1_prime =  -(d2y0y*t2x  + d0x2x*t2y);
     
+    //clipping
+    if(minX < -scale_x) minX = -scale_x;
+    if(minY < -scale_y) minY = -scale_y;
+    if(maxX >  scale_x) maxX = scale_y;
+    if(maxY >  scale_y) maxY = scale_y;
+    
     for(float x = minX;x<=maxX;x+=deltax)
     {
         for(float y = minY;y<=maxY;y+=deltay)
         {
-            
             float lambda0 = d1y2y * x  + d2x1x * y + lambda0_prime;
             if(lambda0 < 0) continue;
             
@@ -251,16 +265,14 @@ void pipeline(struct Vec4* points,int index0,int index1,int index2,
                 
                 XPoint pixel_coords = to_screen_coords(x,y);
                 
-                
                 pixel_coords.x = clamp(pixel_coords.x,0,window_width_px);
                 pixel_coords.y = clamp(pixel_coords.y,0,window_height_px);
                 
-                //XSetForeground(dis,gc,c.integer);
-                //XDrawPoint(dis,win,gc,pixel_coords.x,pixel_coords.y);
-                
-                XPutPixel(screen_img,
+                int32_t * pixels = (int32_t*)(screen_img->data);
+                pixels[pixel_coords.x+window_width_px*pixel_coords.y]=c.integer;
+                /*XPutPixel(screen_img,
                           pixel_coords.x,pixel_coords.y,
-                          c.integer);
+                          c.integer);*/
             }
         }
     }

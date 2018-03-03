@@ -60,15 +60,17 @@ int main (int argc,char ** argv)
     
     double dt = 1/30.0;
     struct timespec tstart={0,0}, tend={0,0};
-    /* look for events forever... */
     
+    /* look for events forever... */
     while(1) 
     {		
         /* get the next event and stuff it into our event variable.
         Note:  only events we set the mask for are detected!
         */
+        
+        
         clock_gettime(CLOCK_MONOTONIC, &tstart);
-        XNextEvent(dis, &event);
+        
         if(dt < (1/30.0))
         {
             double diff = (1/30.0) - dt;
@@ -80,14 +82,13 @@ int main (int argc,char ** argv)
             clock_nanosleep(CLOCK_MONOTONIC,TIMER_ABSTIME,&tstart,NULL);
         }
         
-        
+        XNextEvent(dis, &event);
         
         
         if (event.type==Expose && event.xexpose.count==0) 
         {
             /* the window was exposed redraw it! */
             
-            redraw();
             
             get_window_size(&window_width_px,&window_height_px);
             deltax = 1.0f/window_width_px;
@@ -96,7 +97,6 @@ int main (int argc,char ** argv)
             screen_img = XGetImage(dis, win, 0,0, 
                                    window_width_px, window_height_px, AllPlanes,
                                    ZPixmap);
-            
         }
         
         
