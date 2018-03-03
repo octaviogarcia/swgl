@@ -11,7 +11,6 @@
 #include "math.h"
 
 
-//TODO: maybe draw to a texture, and then send that to Xlib?
 
 float transform[4][4] = {
     {1.0f,0.0f,0.0f,0.0f},
@@ -62,6 +61,7 @@ int main (int argc,char ** argv)
     double dt = 1/30.0;
     struct timespec tstart={0,0}, tend={0,0};
     /* look for events forever... */
+    
     while(1) 
     {		
         /* get the next event and stuff it into our event variable.
@@ -69,7 +69,6 @@ int main (int argc,char ** argv)
         */
         clock_gettime(CLOCK_MONOTONIC, &tstart);
         XNextEvent(dis, &event);
-        redraw();
         if(dt < (1/30.0))
         {
             double diff = (1/30.0) - dt;
@@ -81,17 +80,24 @@ int main (int argc,char ** argv)
             clock_nanosleep(CLOCK_MONOTONIC,TIMER_ABSTIME,&tstart,NULL);
         }
         
+        
+        
+        
         if (event.type==Expose && event.xexpose.count==0) 
         {
             /* the window was exposed redraw it! */
+            
+            redraw();
+            
             get_window_size(&window_width_px,&window_height_px);
             deltax = 1.0f/window_width_px;
             deltay = 1.0f/window_height_px;
+            
+            screen_img = XGetImage(dis, win, 0,0, 
+                                   window_width_px, window_height_px, AllPlanes,
+                                   ZPixmap);
+            
         }
-        
-        screen_img = XGetImage(dis, win, 0,0, 
-                               window_width_px, window_width_px, AllPlanes,
-                               ZPixmap);
         
         
         if (event.type==KeyPress&&
@@ -101,7 +107,7 @@ int main (int argc,char ** argv)
             KeyPress data into regular text.  Weird but necessary...
             */
             
-            double deltamov = 0.01f;
+            double deltamov = 0.1f;
             
             if (text[0]=='q') 
             {
