@@ -265,14 +265,14 @@ void pipeline(struct Vec4* points,int index0,int index1,int index2,
                 
                 XPoint pixel_coords = to_screen_coords(x,y);
                 
-                pixel_coords.x = clamp(pixel_coords.x,0,window_width_px);
-                pixel_coords.y = clamp(pixel_coords.y,0,window_height_px);
+                //Is there a way to do this without branching?
+                if(pixel_coords.x<0 || pixel_coords.x>=window_width_px) continue;
+                if(pixel_coords.y<0 || pixel_coords.y>=window_height_px) continue;
+                //pixel_coords.x = clamp(pixel_coords.x,0,window_width_px-1);
+                //pixel_coords.y = clamp(pixel_coords.y,0,window_height_px-1);
                 
                 int32_t * pixels = (int32_t*)(screen_img->data);
                 pixels[pixel_coords.x+window_width_px*pixel_coords.y]=c.integer;
-                /*XPutPixel(screen_img,
-                          pixel_coords.x,pixel_coords.y,
-                          c.integer);*/
             }
         }
     }

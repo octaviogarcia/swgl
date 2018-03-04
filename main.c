@@ -12,16 +12,23 @@
 
 
 
-float transform[4][4] = {
+float mytransform[4][4] = {
     {1.0f,0.0f,0.0f,0.0f},
     {0.0f,1.0f,0.0f,0.0f},
     {0.0f,0.0f,1.0f,0.0f},
     {0.0f,0.0f,0.0f,1.0f}};
 
+float identity[4][4] = {
+    {1.0f,0.0f,0.0f,0.0f},
+    {0.0f,1.0f,0.0f,0.0f},
+    {0.0f,0.0f,1.0f,0.0f},
+    {0.0f,0.0f,0.0f,1.0f}};
+
+float (*transform)[4][4];
 
 void* vertexShader(struct Vec4* vertex,void* attribute)
 {
-    *vertex = apply_matrix(transform,*vertex);
+    *vertex = apply_matrix4x4(*transform,*vertex);
     return attribute;
 }
 
@@ -40,8 +47,17 @@ struct Vec4 fragmentShader(float fragx,float fragy,struct Vec4 triangle[3],float
 
 int main (int argc,char ** argv) 
 {
-    struct Vec4 points[] = { VEC4(0.5,0.5,1,1), VEC4(-0.5,0.5,1,1), VEC4(-0.5,-0.5,1,1), VEC4(0.5,-0.5,1,1), VEC4(0,0,1,1) };
-    int num_points = 5;
+    struct Vec4 points[] = { 
+        VEC4(0.5,0.5,1,1), //0
+        VEC4(-0.5,0.5,1,1), //1
+        VEC4(-0.5,-0.5,1,1), //2
+        VEC4(0.5,-0.5,1,1), //3
+        VEC4(0,0,1,1), //4
+        VEC4(2,2,2,1), //5
+        VEC4(-2,2,2,1), //6
+        VEC4(-2,-2,2,1), //7
+        VEC4(2,-2,2,1) }; //8
+    int num_points = sizeof points / sizeof points[0];
     
     
     XEvent event;		/* the XEvent declaration !!! */
@@ -120,10 +136,10 @@ int main (int argc,char ** argv)
                 float cos_angle = cos(angle);
                 float sin_angle = sin(angle);
                 
-                transform[0][0]=cos_angle;
-                transform[0][1]=-sin_angle;
-                transform[1][0]=sin_angle;
-                transform[1][1]=cos_angle;
+                mytransform[0][0]=cos_angle;
+                mytransform[0][1]=-sin_angle;
+                mytransform[1][0]=sin_angle;
+                mytransform[1][1]=cos_angle;
             }
             else if(text[0]=='v')
             {
@@ -132,34 +148,34 @@ int main (int argc,char ** argv)
                 float cos_angle = cos(angle);
                 float sin_angle = sin(angle);
                 
-                transform[0][0]=cos_angle;
-                transform[0][1]=-sin_angle;
-                transform[1][0]=sin_angle;
-                transform[1][1]=cos_angle;
+                mytransform[0][0]=cos_angle;
+                mytransform[0][1]=-sin_angle;
+                mytransform[1][0]=sin_angle;
+                mytransform[1][1]=cos_angle;
             }
             else if(text[0]=='w')
             {
-                transform[1][3]+=deltamov;
+                mytransform[1][3]+=deltamov;
             }
             else if(text[0]=='s')
             {
-                transform[1][3]-=deltamov;
+                mytransform[1][3]-=deltamov;
             }
             else if(text[0]=='a')
             {
-                transform[0][3]-=deltamov;
+                mytransform[0][3]-=deltamov;
             }
             else if(text[0]=='d')
             {
-                transform[0][3]+=deltamov;
+                mytransform[0][3]+=deltamov;
             }
             else if(text[0]=='r')
             {
-                transform[2][3]+=deltamov;
+                mytransform[2][3]+=deltamov;
             }
             else if(text[0]=='f')
             {
-                transform[2][3]-=deltamov;
+                mytransform[2][3]-=deltamov;
             }
         }
         if (event.type==ButtonPress && !mouse_clicked) 
@@ -187,7 +203,14 @@ int main (int argc,char ** argv)
             mouse_clicked = false;
         }
         
-        struct Vec4 colors[] = {VEC4(1,0,0,1),VEC4(0,1,0,1),VEC4(0,0,1,1)};
+        struct Vec4 colors[] = {VEC4(1,0,0,1),VEC4(0,1,0,1),VEC4(0,0,1,1),VEC4(1,1,1,1)};
+        //white background
+        transform=&identity;
+        pipeline(points,5,6,7,colors,sizeof(typeof(colors[0])),3,3,3);
+        pipeline(points,5,7,8,colors,sizeof(typeof(colors[0])),3,3,3);
+        
+        //colorful triangle
+        transform=&mytransform;
         pipeline(points,0,1,2,colors,sizeof(typeof(colors[0])),0,1,2);
         
         XPutImage(dis, win, gc, screen_img, 

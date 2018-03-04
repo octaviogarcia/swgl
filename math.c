@@ -25,7 +25,7 @@ struct Vec4 scale(float s,struct Vec4 v)
     return VEC4(s*v.x,s*v.y,s*v.z,s*v.w);
 }
 
-struct Vec4 apply_matrix(float matrix[4][4],struct Vec4 v)
+struct Vec4 apply_matrix4x4(float matrix[4][4],struct Vec4 v)
 {
     float x = matrix[0][0]*v.x+matrix[0][1]*v.y+matrix[0][2]*v.z+matrix[0][3]*v.w;
     float y = matrix[1][0]*v.x+matrix[1][1]*v.y+matrix[1][2]*v.z+matrix[1][3]*v.w;

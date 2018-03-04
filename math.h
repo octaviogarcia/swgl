@@ -29,7 +29,7 @@ struct Vec4
 
 struct Vec4 crossProduct(struct Vec4 v1,struct Vec4 v2);
 float dotProduct(struct Vec4 v1,struct Vec4 v2);
-struct Vec4 apply_matrix(float matrix[4][4],struct Vec4 v);
+struct Vec4 apply_matrix4x4(float matrix[4][4],struct Vec4 v);
 
 int32_t max(int32_t a,int32_t b);
 int32_t min(int32_t a,int32_t b);
