@@ -11,10 +11,13 @@ float scale_x = 1.0;
 float scale_y = 1.0;
 float scale_z = 1.0;
 
-int window_width_px=300;//update below pls if you change this
-int window_height_px=300;//update below pls if you change this
-float deltax = 1.0f/300;//divided by width
-float deltay = 1.0f/300;//divided by height
+#define DEFAULTWINDOWWIDTH 300
+#define DEFAULTWINDOWHEIGHT 300
+int window_width_px=DEFAULTWINDOWWIDTH;
+int window_height_px=DEFAULTWINDOWHEIGHT; 
+//"how much" you need to move, to move to another pixel
+float deltax = 1.0f/DEFAULTWINDOWWIDTH;//divided by width
+float deltay = 1.0f/DEFAULTWINDOWHEIGHT;//divided by height
 XImage * screen_img = NULL;
 
 Color colori(uint8_t red,uint8_t green,uint8_t blue)

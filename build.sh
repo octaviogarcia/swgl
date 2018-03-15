@@ -13,7 +13,7 @@ for f in p.iterdir():
 
 
 #compiling_flags = ["-Og","-g"]
-compiling_flags = ["-Ofast","-march=native","-pipe","-fomit-frame-pointer"]
+compiling_flags = ["-Ofast","-march=native","-pipe","-fomit-frame-pointer","-pthread"]
 command = ["gcc",*compiling_flags,"-o"]
 mid_flag = ["-c"]
 
@@ -28,7 +28,7 @@ for cfile in cfiles:
 
 #linking
 
-linking_flags = ["-lm","-lX11"]
+linking_flags = ["-lm","-lX11","-pthread"]
 
 ofiles_str = [x.name for x in ofiles]
 call([*command,"main",*ofiles_str,*linking_flags])
