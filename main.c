@@ -127,19 +127,23 @@ int main (int argc,char ** argv)
         */
         
         XNextEvent(dis, &event);
-        
         if (event.type==Expose && event.xexpose.count==0) 
         {
-            /* the window was exposed redraw it! */
+            /*window exposed, get new parameters */
+            
+            XLockDisplay(dis); 
             
             get_window_size(&window_width_px,&window_height_px);
+            
             deltax = 1.0f/window_width_px;
             deltay = 1.0f/window_height_px;
             
-            
+            //@Leak Does this produce a leak?
             screen_img = XGetImage(dis, win, 0,0, 
                                    window_width_px, window_height_px, AllPlanes,
                                    ZPixmap);
+            XUnlockDisplay(dis); 
+            
         }
         
         if(!draw_inited)

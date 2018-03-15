@@ -114,7 +114,6 @@ void get_window_size(int* width,int* height)
                  width,height,
                  &border_width_return,
                  &depth_return);
-    
 }
 
 
@@ -124,14 +123,12 @@ void draw_triangle(struct Vec4* points,int index1,int index2,int index3)
 {
     unsigned int width=0,height=0;
     
-    get_window_size(&width,&height);
-    
     struct Vec4 p1 = points[index1];
     struct Vec4 p2 = points[index2];
     struct Vec4 p3 = points[index3];
     
-    float factorx = width/scale_x;
-    float factory = height/scale_y;
+    float factorx = window_width_px/scale_x;
+    float factory = window_height_px/scale_y;
     
     XPoint v1 = (XPoint){.x=factorx*p1.x,.y=factory*(scale_y-p1.y)};
     XPoint v2 = (XPoint){.x=factorx*p2.x,.y=factory*(scale_y-p2.y)};
