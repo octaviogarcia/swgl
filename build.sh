@@ -13,7 +13,7 @@ for f in p.iterdir():
 
 
 compiling_flags = ["-Og","-g","-pthread"]
-#compiling_flags = ["-Ofast","-march=native","-pipe","-fomit-frame-pointer","-pthread"]
+#compiling_flags = ["-O2","-march=native","-pipe","-pthread"]
 command = ["gcc",*compiling_flags,"-o"]
 mid_flag = ["-c"]
 

@@ -10,10 +10,9 @@
 #include <math.h>
 #include "math.h"
 #include <pthread.h>
+#include <stdatomic.h>
 
-
-
-bool close_program = false;
+_Atomic bool close_program = false;
 
 float mytransform[4][4] = {
     {1.0f,0.0f,0.0f,0.0f},
@@ -105,10 +104,11 @@ void* draw_thread(void* usr_info)
 }
 
 
+int keys[1024] = {0};
+
 int main (int argc,char ** argv) 
 {
-    XEvent event;		/* the XEvent declaration !!! */
-    KeySym key;		/* a dealie-bob to handle KeyPress Events */	
+    XEvent event;		/* the XEvent declaration !!! */	
     char text[255];		/* a char buffer for KeyPress Events */
     
     XInitThreads();
@@ -119,7 +119,7 @@ int main (int argc,char ** argv)
     
     pthread_t draw_thread_descriptor;
     bool draw_inited = false;
-    /* look for events forever... */
+    
     while(1) 
     {		
         /* get the next event and stuff it into our event variable.
@@ -157,22 +157,23 @@ int main (int argc,char ** argv)
             }
         }
         
-        if (event.type==KeyPress &&
-            XLookupString(&event.xkey,text,255,&key,0)==1) 
+        //if (event.type==KeyPress &&
+        //XLookupString(&event.xkey,text,255,&key,0)==1)
+        
+        
+        if (event.type==KeyPress)  
         {
-            /* use the XLookupString routine to convert the invent
-            KeyPress data into regular text.  Weird but necessary...
-            */
+            KeySym keysym = XLookupKeysym(&event.xkey, 0);
             
             double deltamov = 0.1f;
             
-            if (text[0]=='q') 
+            if (keysym == XK_F1) 
             {
                 close_program = true;
                 pthread_join(draw_thread_descriptor,NULL);
                 close_x();
             }
-            else if(text[0]=='c')
+            else if(keysym == XK_c)
             {
                 /*
                 degrees+=1;
@@ -186,7 +187,7 @@ int main (int argc,char ** argv)
                 mytransform[1][1]=cos_angle;
                 */
             }
-            else if(text[0]=='v')
+            else if(keysym == XK_v)
             {
                 /*
                 degrees-=1;
@@ -200,27 +201,27 @@ int main (int argc,char ** argv)
                 mytransform[1][1]=cos_angle;
                 */
             }
-            else if(text[0]=='w')
+            else if(text[0]==XK_w)
             {
                 //mytransform[1][3]+=deltamov;
             }
-            else if(text[0]=='s')
+            else if(text[0]==XK_s)
             {
                 //mytransform[1][3]-=deltamov;
             }
-            else if(text[0]=='a')
+            else if(text[0]==XK_a)
             {
                 //mytransform[0][3]-=deltamov;
             }
-            else if(text[0]=='d')
+            else if(text[0]==XK_d)
             {
                 //mytransform[0][3]+=deltamov;
             }
-            else if(text[0]=='r')
+            else if(text[0]==XK_r)
             {
                 //mytransform[2][3]+=deltamov;
             }
-            else if(text[0]=='f')
+            else if(text[0]==XK_f)
             {
                 //mytransform[2][3]-=deltamov;
             }
