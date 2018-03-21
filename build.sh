@@ -12,8 +12,8 @@ for f in p.iterdir():
   cfiles.append(f)
 
 
-compiling_flags = ["-Og","-g","-pthread"]
-#compiling_flags = ["-O2","-march=native","-pipe","-pthread"]
+#compiling_flags = ["-Og","-g","-pthread"]
+compiling_flags = ["-O2","-march=native","-pipe","-pthread"]
 command = ["gcc",*compiling_flags,"-o"]
 mid_flag = ["-c"]
 

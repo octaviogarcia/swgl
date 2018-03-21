@@ -120,6 +120,7 @@ int main (int argc,char ** argv)
     pthread_t draw_thread_descriptor;
     bool draw_inited = false;
     
+    
     while(1) 
     {		
         /* get the next event and stuff it into our event variable.
@@ -127,23 +128,14 @@ int main (int argc,char ** argv)
         */
         
         XNextEvent(dis, &event);
+        
         if (event.type==Expose && event.xexpose.count==0) 
         {
             /*window exposed, get new parameters */
-            
-            XLockDisplay(dis); 
-            
             get_window_size(&window_width_px,&window_height_px);
-            
             deltax = 1.0f/window_width_px;
             deltay = 1.0f/window_height_px;
-            
-            //@Leak Does this produce a leak?
-            screen_img = XGetImage(dis, win, 0,0, 
-                                   window_width_px, window_height_px, AllPlanes,
-                                   ZPixmap);
-            XUnlockDisplay(dis); 
-            
+            UpdateScreenImg();
         }
         
         if(!draw_inited)
@@ -154,12 +146,9 @@ int main (int argc,char ** argv)
             if(err)
             {
                 printf("Could initialize draw thread, err %d",err);
+                exit(1);
             }
         }
-        
-        //if (event.type==KeyPress &&
-        //XLookupString(&event.xkey,text,255,&key,0)==1)
-        
         
         if (event.type==KeyPress)  
         {

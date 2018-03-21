@@ -2,7 +2,7 @@
 #define DRAW_H
 
 #include <stdint.h>
-
+#include <stdio.h>
 #include <stdlib.h>
 //http://math.msu.su/~vvb/2course/Borisenko/CppProjects/GWindow/hi.c
 #include <X11/Xlib.h>
@@ -15,6 +15,7 @@ extern Display *dis;
 extern int screen;
 extern Window win;
 extern GC gc;
+extern XVisualInfo visinfo;
 extern XImage * screen_img;
 
 
@@ -64,7 +65,6 @@ union
 /* here are our X routines declared! */
 void init_x();
 void close_x();
-void redraw();
 
 Color colori(uint8_t red,uint8_t green,uint8_t blue);
 Color colorf(float red,float green,float blue);
@@ -86,4 +86,5 @@ void pipeline(struct Vec4* points,int index0,int index1,int index2,
 void* vertexShader(struct Vec4* vertex,void* attribute);
 struct Vec4 fragmentShader(float fragx,float fragy,struct Vec4 triangle[3],float lambda0,
                            float lambda1, float lambda2,void * vertexOut[3]);
+void UpdateScreenImg();
 #endif

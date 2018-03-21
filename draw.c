@@ -18,6 +18,7 @@ int window_height_px=DEFAULTWINDOWHEIGHT;
 //"how much" you need to move, to move to another pixel
 float deltax = 1.0f/DEFAULTWINDOWWIDTH;//divided by width
 float deltay = 1.0f/DEFAULTWINDOWHEIGHT;//divided by height
+XVisualInfo visinfo = {};
 XImage * screen_img = NULL;
 
 Color colori(uint8_t red,uint8_t green,uint8_t blue)
@@ -65,6 +66,17 @@ Color colori_delta_blue(Color color,int32_t delta)
     return color;
 }
 
+void UpdateScreenImg()
+{
+    XImage* old_screen_img = screen_img;
+    char* mem = malloc(window_width_px*window_height_px*4);//4B per pixel
+    
+    screen_img = XCreateImage(dis, visinfo.visual, visinfo.depth,
+                              ZPixmap, 0, mem, window_width_px, window_height_px,
+                              32, 0);
+    
+    if(old_screen_img) XDestroyImage(old_screen_img);
+}
 
 
 void init_x() {
@@ -88,19 +100,24 @@ void init_x() {
     
     XClearWindow(dis, win);
     XMapRaised(dis, win);
+    {
+        int screenbitdepth = 24;
+        int screen = DefaultScreen(dis);
+        if(!XMatchVisualInfo(dis, screen, screenbitdepth, TrueColor, &visinfo)) {
+            printf("Couldnt match visual info\n");
+        }
+    }
+    UpdateScreenImg();
 };
 
 void close_x() {
+    XDestroyImage(screen_img);
+    screen_img = NULL;
     XFreeGC(dis, gc);
     XDestroyWindow(dis,win);
     XCloseDisplay(dis);	
     exit(1);				
 };
-
-void redraw() {
-    XClearWindow(dis, win);
-};
-
 
 void get_window_size(int* width,int* height)
 {
@@ -146,7 +163,7 @@ void draw_triangle(struct Vec4* points,int index1,int index2,int index3)
 XPoint to_screen_coords(float x,float y)
 {
     float newx = 0.5f*x*scale_z/scale_x + 0.5f; //(x*scale_z+scale_x)/(2*scale_x)
-    float newy = 0.5f - 0.5f*y*scale_z/scale_y; //same but 1.0 minus (y*scale_z+scale_y)/(2*scale_y)..
+    float newy = 0.5f - 0.5f*y*scale_z/scale_y; //1.0 minus (y*scale_z+scale_y)/(2*scale_y)..
     return (XPoint){.x=window_width_px*newx,.y=window_height_px*newy};
 }
 
