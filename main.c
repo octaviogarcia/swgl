@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include <assert.h>
 #include <time.h>
+#include <unistd.h>
 
 #include "draw.h"
 #include <math.h>
@@ -13,6 +14,7 @@
 #include <stdatomic.h>
 
 _Atomic bool close_program = false;
+_Atomic double dt = 1/30.0;
 
 float mytransform[4][4] = {
     {1.0f,0.0f,0.0f,0.0f},
@@ -51,7 +53,6 @@ struct Vec4 fragmentShader(float fragx,float fragy,struct Vec4 triangle[3],float
     
     return result;
 }
-
 void* draw_thread(void* usr_info)
 {
     struct Vec4 points[] = { 
@@ -69,7 +70,6 @@ void* draw_thread(void* usr_info)
     int oldy = -1;
     int degrees = 0;
     
-    double dt = 1/30.0;
     struct timespec tstart={0,0}, tend={0,0};
     while(!close_program) 
     {		
@@ -98,11 +98,19 @@ void* draw_thread(void* usr_info)
         
         dt =((double)tend.tv_sec + 1.0e-9*tend.tv_nsec) - 
             ((double)tstart.tv_sec + 1.0e-9*tstart.tv_nsec);
-        printf("FPS %f\n",1.0/dt);
     }
     return NULL;
 }
 
+void* logger_thread(void* usr_info)
+{
+    while(!close_program)
+    {
+        usleep(dt*100000);
+        printf("FPS %f\r",1.0/dt);
+    }
+    return NULL;
+}
 
 int keys[1024] = {0};
 
@@ -120,6 +128,8 @@ int main (int argc,char ** argv)
     pthread_t draw_thread_descriptor;
     bool draw_inited = false;
     
+    pthread_t logger_thread_descriptor;
+    bool logger_inited = false;
     
     while(1) 
     {		
@@ -149,6 +159,16 @@ int main (int argc,char ** argv)
                 exit(1);
             }
         }
+        if(!logger_inited)
+        {
+            logger_inited = true;
+            int err = pthread_create(&logger_thread_descriptor, NULL,logger_thread, NULL);
+            if(err)
+            {
+                printf("Could initialize draw thread, err %d",err);
+                exit(1);
+            }
+        }
         
         if (event.type==KeyPress)  
         {
@@ -160,6 +180,7 @@ int main (int argc,char ** argv)
             {
                 close_program = true;
                 pthread_join(draw_thread_descriptor,NULL);
+                pthread_join(logger_thread_descriptor,NULL);
                 close_x();
             }
             else if(keysym == XK_c)
