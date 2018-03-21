@@ -6,12 +6,13 @@
 #include <assert.h>
 #include <time.h>
 #include <unistd.h>
-
-#include "draw.h"
 #include <math.h>
-#include "math.h"
 #include <pthread.h>
 #include <stdatomic.h>
+
+#include "draw.h"
+#include "math.h"
+
 
 _Atomic bool close_program = false;
 _Atomic double dt = 1/30.0;
@@ -106,7 +107,7 @@ void* logger_thread(void* usr_info)
 {
     while(!close_program)
     {
-        usleep(dt*100000);
+        usleep(1000);
         printf("FPS %f\r",1.0/dt);
     }
     return NULL;
