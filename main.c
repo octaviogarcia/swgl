@@ -12,7 +12,7 @@
 
 #include "draw.h"
 #include "math.h"
-
+//TODO: proper projection, with FOV and everything
 
 _Atomic bool close_program = false;
 _Atomic double dt = 1/30.0;
@@ -58,15 +58,22 @@ Vec4 fragmentShader(float fragx,float fragy, Vec4 triangle[3],float lambda0,floa
 void* draw_thread(void* usr_info)
 {
     Vec4 points[] = { 
-        VEC4(0.5,0.5,1,1), //0
-        VEC4(-0.5,0.5,1,1), //1
-        VEC4(-0.5,-0.5,1,1), //2
-        VEC4(0.5,-0.5,1,1), //3
-        VEC4(0,0,1,1), //4
-        VEC4(2,2,2,1), //5
-        VEC4(-2,2,2,1), //6
-        VEC4(-2,-2,2,1), //7
-        VEC4(2,-2,2,1) }; //8
+        VEC4(2,2,2,1), //0
+        VEC4(-2,2,2,1), //1
+        VEC4(-2,-2,2,1), //2
+        VEC4(2,-2,2,1), //3
+        VEC4(0.25f,0.25f,0.5f,1),//4
+        VEC4(-0.25f,0.25f,0.5f,1),//5
+        VEC4(-0.25f,-0.25f,0.5f,1),//6
+        VEC4(0.25f,-0.25f,0.5f,1),//7
+        VEC4(0.25f,0.25f,0.75f,1),//8
+        VEC4(-0.25f,0.25f,0.75f,1),//9
+        VEC4(-0.25f,-0.25f,0.75f,1),//10
+        VEC4(0.25f,-0.25f,0.75f,1)//11
+    }; 
+    
+    Vec4 colors[] = {VEC4(1,0,0,0.3f),VEC4(0,1,0,0.3f),VEC4(0,0,1,0.3f),VEC4(0.5f,0.5f,1,1)};
+    
     int num_points = sizeof points / sizeof points[0];
     int oldx = -1;
     int oldy = -1;
@@ -77,22 +84,56 @@ void* draw_thread(void* usr_info)
     {		
         clock_gettime(CLOCK_MONOTONIC, &tstart);
         
-        Vec4 colors[] = {VEC4(1,0,0,1),VEC4(0,1,0,1),VEC4(0,0,1,1),VEC4(0.5f,0.5f,1,1)};
-        
         
         pthread_mutex_lock(&img_data_lock);
         
         clear_all_buffers();
         
-        //colorful triangle
-        transform=&mytransform;
-        pipeline(points,0,1,2,colors,sizeof(typeof(colors[0])),0,1,2);
-        
         
         //background
         transform=&identity;
-        pipeline(points,5,6,7,colors,sizeof(typeof(colors[0])),3,3,3);
-        pipeline(points,5,7,8,colors,sizeof(typeof(colors[0])),3,3,3);
+        pipeline(points,0,1,2,colors,sizeof(typeof(colors[0])),3,3,3);
+        pipeline(points,0,2,3,colors,sizeof(typeof(colors[0])),3,3,3);
+        
+        
+        //colorful cube
+        transform=&mytransform;
+        /*
+        VEC4(0.5f,0.5f,0.5f,1),//4
+        VEC4(-0.5f,0.5f,0.5f,1),//5
+        VEC4(-0.5f,-0.5f,0.5f,1),//6
+        VEC4(0.5f,-0.5f,0.5f,1),//7
+        VEC4(0.5f,0.5f,0.75f,1),//8
+        VEC4(-0.5f,0.5f,0.75f,1),//9
+        VEC4(-0.5f,-0.5f,0.75f,1),//10
+        VEC4(0.5f,-0.5f,0.75f,1)//11
+        */
+        
+        
+        //Back
+        pipeline(points,8,9,10,colors,sizeof(typeof(colors[0])),0,1,2);
+        pipeline(points,8,10,11,colors,sizeof(typeof(colors[0])),0,1,2);
+        
+        //Top
+        pipeline(points,4,8,5,colors,sizeof(typeof(colors[0])),0,1,2);
+        pipeline(points,9,8,5,colors,sizeof(typeof(colors[0])),0,1,2);
+        
+        //Bottom
+        pipeline(points,7,11,6,colors,sizeof(typeof(colors[0])),0,1,2);
+        pipeline(points,10,11,6,colors,sizeof(typeof(colors[0])),0,1,2);
+        
+        //Left
+        pipeline(points,5,9,10,colors,sizeof(typeof(colors[0])),0,1,2);
+        pipeline(points,6,5,10,colors,sizeof(typeof(colors[0])),0,1,2);
+        
+        //Right
+        pipeline(points,4,8,11,colors,sizeof(typeof(colors[0])),0,1,2);
+        pipeline(points,7,4,11,colors,sizeof(typeof(colors[0])),0,1,2);
+        
+        //Front
+        pipeline(points,4,5,6,colors,sizeof(typeof(colors[0])),0,1,2);
+        pipeline(points,4,6,7,colors,sizeof(typeof(colors[0])),0,1,2);
+        
         
         pthread_mutex_unlock(&img_data_lock);
         
@@ -148,7 +189,7 @@ int main (int argc,char ** argv)
     pthread_t logger_thread_descriptor;
     bool logger_inited = false;
     
-    int degrees=0;
+    int degrees1=0,degrees2=0;
     
     while(1) 
     {		
@@ -201,44 +242,75 @@ int main (int argc,char ** argv)
         {
             KeyCode keycode = event.xkey.keycode;
             
-            double deltamov = 0.1f;
+            static double deltamov = 0.1f;
+            static float deltaangle = PI / 180.0f;
             
+            float cos_angle = cos(deltaangle);
+            float sin_angle = sin(deltaangle);
+            float anticlockwise[4][4] = 
+            {
+                {cos_angle,-sin_angle,0.0f,0.0f},
+                {sin_angle, cos_angle,0.0f,0.0f},
+                {0.0f,0.0f,1.0f,0.0f},
+                {0.0f,0.0f,0.0f,1.0f}
+            };
+            
+            float clockwise[4][4] = 
+            {
+                {cos_angle,sin_angle,0.0f,0.0f},
+                {-sin_angle, cos_angle,0.0f,0.0f},
+                {0.0f,0.0f,1.0f,0.0f},
+                {0.0f,0.0f,0.0f,1.0f}
+            };
+            
+            float zanticlockwise[4][4] = 
+            {
+                {cos_angle,0.0f,-sin_angle,0.0f},
+                {0.0f     ,1.0f,      0.0f,0.0f},
+                {sin_angle,0.0f,cos_angle ,0.0f},
+                {0.0f     ,0.0f,      0.0f,1.0f}
+            };
+            float zclockwise[4][4] = 
+            {
+                {cos_angle,0.0f,sin_angle,0.0f},
+                {0.0f     ,1.0f,      0.0f,0.0f},
+                {-sin_angle,0.0f,cos_angle ,0.0f},
+                {0.0f     ,0.0f,      0.0f,1.0f}
+            };
+            
+            pthread_mutex_lock(&img_data_lock);
             if (keycode == XKeysymToKeycode(dis, XK_F1)) 
             {
                 
                 close_program = true;
+                pthread_mutex_unlock(&img_data_lock);
                 pthread_join(draw_thread_descriptor,NULL);
                 pthread_join(logger_thread_descriptor,NULL);
                 pthread_mutex_destroy(&img_data_lock);
+                
+                if(screen_img)
+                    XDestroyImage(screen_img);
+                screen_img = NULL;
+                if(depth_buffer)
+                    free(depth_buffer);
+                depth_buffer=NULL;
                 close_x();
             }
             else if(keycode ==  XKeysymToKeycode(dis,XK_c))
             {
-                
-                degrees+=1;
-                float angle = degrees*PI / 180.0f;
-                float cos_angle = cos(angle);
-                float sin_angle = sin(angle);
-                
-                mytransform[0][0]=cos_angle;
-                mytransform[0][1]=-sin_angle;
-                mytransform[1][0]=sin_angle;
-                mytransform[1][1]=cos_angle;
-                
+                matrixProduct(anticlockwise,mytransform);
             }
             else if(keycode ==  XKeysymToKeycode(dis,XK_v))
             {
-                
-                degrees-=1;
-                float angle = degrees*PI / 180.0f;
-                float cos_angle = cos(angle);
-                float sin_angle = sin(angle);
-                
-                mytransform[0][0]=cos_angle;
-                mytransform[0][1]=-sin_angle;
-                mytransform[1][0]=sin_angle;
-                mytransform[1][1]=cos_angle;
-                
+                matrixProduct(clockwise,mytransform);
+            }
+            else if(keycode ==  XKeysymToKeycode(dis,XK_b))
+            {
+                matrixProduct(zanticlockwise,mytransform);
+            }
+            else if(keycode ==  XKeysymToKeycode(dis,XK_n))
+            {
+                matrixProduct(zclockwise,mytransform);
             }
             else if(keycode== XKeysymToKeycode(dis,XK_w))
             {
@@ -264,6 +336,7 @@ int main (int argc,char ** argv)
             {
                 mytransform[2][3]-=deltamov;
             }
+            pthread_mutex_unlock(&img_data_lock);
         }
         
         if (event.type==ButtonPress && !mouse_clicked) 

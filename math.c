@@ -122,3 +122,39 @@ int32_t interpolate(float i,int32_t floor,int32_t roof)
     
     return roof*i+floor*(1.0-i);
 }
+
+void matrixProduct(float b[4][4],float a[4][4])
+{
+    /*
+    
+    
+    ................ a00 a01 a02 a03
+    ................ a10 a11 a12 a13
+    ................ a20 a21 a22 a23
+     ................ a30 a31 a32 a33
+     
+    b00 b01 b02 b03  b00*a00+b01*a10+b02*a20+b03*b30
+    b10 b11 b12 b13
+    b20 b21 b22 b23
+    b30 b31 b32 b33
+    
+    */
+    
+    float result[4][4];
+    
+    for(int j=0;j<4;j++)
+    {
+        for(int k=0;k<4;k++)
+        {
+            result[j][k]=0;
+            for(int i = 0;i<4;i++)
+            {
+                result[j][k]+=b[j][i]*a[i][k];
+            }
+        }
+    }
+    for(int j=0;j<4;j++)
+    {
+        for(int k=0;k<4;k++) a[j][k]=result[j][k];
+    }
+}

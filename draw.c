@@ -133,8 +133,6 @@ void init_x() {
 };
 
 void close_x() {
-    XDestroyImage(screen_img);
-    screen_img = NULL;
     XFreeGC(dis, gc);
     XDestroyWindow(dis,win);
     XCloseDisplay(dis);	
@@ -214,10 +212,11 @@ void pipeline( Vec4* points,int index0,int index1,int index2,
     //https://www.scratchapixel.com/lessons/3d-basic-rendering/rasterization-practical-implementation/rasterization-stage
     
     //If its too close, dont draw...
-    if(triangle[0].z <= 0.05f) return;
+    
+    /*if(triangle[0].z <= 0.05f) return;
     if(triangle[1].z <= 0.05f) return;
     if(triangle[2].z <= 0.05f) return;
-    if(triangle[0].z <= 0.05f) return;
+    if(triangle[0].z <= 0.05f) return;*/
     //Should we do the same for too far?
     
     float t0z=triangle[0].z;
@@ -306,6 +305,8 @@ void pipeline( Vec4* points,int index0,int index1,int index2,
                 float z = lambda0*t0z+lambda1*t1z+lambda2*t2z;
                 if(z>=depth_buffer[buffer_pos]) continue;
                 depth_buffer[buffer_pos]=z;
+                
+                if(z<=0.02f) continue;
                 
                 Vec4 pixel_color = fragmentShader(x,y,triangle,lambda0,lambda1,lambda2,vertexOut);//callback
                 

@@ -20,6 +20,7 @@ typedef struct Vec4
 Vec4 crossProduct( Vec4 v1, Vec4 v2);
 float dotProduct( Vec4 v1, Vec4 v2);
 Vec4 apply_matrix4x4(float matrix[4][4], Vec4 v);
+void matrixProduct(float matrix1[4][4],float matrix2[4][4]);
 
 int32_t max(int32_t a,int32_t b);
 int32_t min(int32_t a,int32_t b);
