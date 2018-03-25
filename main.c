@@ -6,7 +6,7 @@
 #include <assert.h>
 #include <time.h>
 #include <unistd.h>
-#include <math.h>
+#include <tgmath.h>
 #include <pthread.h>
 #include <stdatomic.h>
 
@@ -32,24 +32,24 @@ float identity[4][4] = {
 
 float (*transform)[4][4];
 
-void* vertexShader(struct Vec4* vertex,void* attribute)
+void* vertexShader(Vec4* vertex,void* attribute)
 {
     *vertex = apply_matrix4x4(*transform,*vertex);
     return attribute;
 }
 
-struct Vec4 fragmentShader(float fragx,float fragy,struct Vec4 triangle[3],float lambda0,float lambda1, float lambda2,void * vertexOut[3])
+Vec4 fragmentShader(float fragx,float fragy, Vec4 triangle[3],float lambda0,float lambda1, float lambda2,void * vertexOut[3])
 {
-    struct Vec4 color0 = *(struct Vec4*)vertexOut[0];
-    struct Vec4 color1 = *(struct Vec4*)vertexOut[1];
-    struct Vec4 color2 = *(struct Vec4*)vertexOut[2];
+    Vec4 color0 = *( Vec4*)vertexOut[0];
+    Vec4 color1 = *( Vec4*)vertexOut[1];
+    Vec4 color2 = *( Vec4*)vertexOut[2];
     
-    struct Vec4 result;
+    Vec4 result;
     
     {
-        struct Vec4 scaled0 = scale(lambda0,color0);
-        struct Vec4 scaled1 = scale(lambda1,color1);
-        struct Vec4 scaled2 = scale(lambda2,color2);
+        Vec4 scaled0 = scale(lambda0,color0);
+        Vec4 scaled1 = scale(lambda1,color1);
+        Vec4 scaled2 = scale(lambda2,color2);
         result = add(scaled0,add(scaled1,scaled2));
     }
     
@@ -57,7 +57,7 @@ struct Vec4 fragmentShader(float fragx,float fragy,struct Vec4 triangle[3],float
 }
 void* draw_thread(void* usr_info)
 {
-    struct Vec4 points[] = { 
+    Vec4 points[] = { 
         VEC4(0.5,0.5,1,1), //0
         VEC4(-0.5,0.5,1,1), //1
         VEC4(-0.5,-0.5,1,1), //2
@@ -77,23 +77,22 @@ void* draw_thread(void* usr_info)
     {		
         clock_gettime(CLOCK_MONOTONIC, &tstart);
         
-        struct Vec4 colors[] = {VEC4(1,0,0,0.5f),VEC4(0,1,0,0.5f),VEC4(0,0,1,0.5f),VEC4(0.5f,0.5f,1,1)};
+        Vec4 colors[] = {VEC4(1,0,0,1),VEC4(0,1,0,1),VEC4(0,0,1,1),VEC4(0.5f,0.5f,1,1)};
         
         
         pthread_mutex_lock(&img_data_lock);
         
-        clear_depth_buffer();
-        clear_image();
+        clear_all_buffers();
+        
+        //colorful triangle
+        transform=&mytransform;
+        pipeline(points,0,1,2,colors,sizeof(typeof(colors[0])),0,1,2);
         
         
         //background
         transform=&identity;
         pipeline(points,5,6,7,colors,sizeof(typeof(colors[0])),3,3,3);
         pipeline(points,5,7,8,colors,sizeof(typeof(colors[0])),3,3,3);
-        
-        //colorful triangle
-        transform=&mytransform;
-        pipeline(points,0,1,2,colors,sizeof(typeof(colors[0])),0,1,2);
         
         pthread_mutex_unlock(&img_data_lock);
         
@@ -149,6 +148,7 @@ int main (int argc,char ** argv)
     pthread_t logger_thread_descriptor;
     bool logger_inited = false;
     
+    int degrees=0;
     
     while(1) 
     {		
@@ -162,11 +162,9 @@ int main (int argc,char ** argv)
         if (event.type==Expose && event.xexpose.count==0) 
         {
             /*window exposed, get new parameters */
-            
-            
             pthread_mutex_lock(&img_data_lock);
             
-            int width=0,height=0;
+            unsigned int width=0,height=0;
             get_window_size(&width,&height);
             UpdateScreenData(width,height);
             
@@ -201,21 +199,22 @@ int main (int argc,char ** argv)
         
         if (event.type==KeyPress)  
         {
-            KeySym keysym = XLookupKeysym(&event.xkey, 0);
+            KeyCode keycode = event.xkey.keycode;
             
             double deltamov = 0.1f;
             
-            if (keysym == XK_F1) 
+            if (keycode == XKeysymToKeycode(dis, XK_F1)) 
             {
+                
                 close_program = true;
                 pthread_join(draw_thread_descriptor,NULL);
                 pthread_join(logger_thread_descriptor,NULL);
                 pthread_mutex_destroy(&img_data_lock);
                 close_x();
             }
-            else if(keysym == XK_c)
+            else if(keycode ==  XKeysymToKeycode(dis,XK_c))
             {
-                /*
+                
                 degrees+=1;
                 float angle = degrees*PI / 180.0f;
                 float cos_angle = cos(angle);
@@ -225,11 +224,11 @@ int main (int argc,char ** argv)
                 mytransform[0][1]=-sin_angle;
                 mytransform[1][0]=sin_angle;
                 mytransform[1][1]=cos_angle;
-                */
+                
             }
-            else if(keysym == XK_v)
+            else if(keycode ==  XKeysymToKeycode(dis,XK_v))
             {
-                /*
+                
                 degrees-=1;
                 float angle = degrees*PI / 180.0f;
                 float cos_angle = cos(angle);
@@ -239,31 +238,31 @@ int main (int argc,char ** argv)
                 mytransform[0][1]=-sin_angle;
                 mytransform[1][0]=sin_angle;
                 mytransform[1][1]=cos_angle;
-                */
+                
             }
-            else if(text[0]==XK_w)
+            else if(keycode== XKeysymToKeycode(dis,XK_w))
             {
-                //mytransform[1][3]+=deltamov;
+                mytransform[1][3]+=deltamov;
             }
-            else if(text[0]==XK_s)
+            else if(keycode== XKeysymToKeycode(dis,XK_s))
             {
-                //mytransform[1][3]-=deltamov;
+                mytransform[1][3]-=deltamov;
             }
-            else if(text[0]==XK_a)
+            else if(keycode== XKeysymToKeycode(dis,XK_a))
             {
-                //mytransform[0][3]-=deltamov;
+                mytransform[0][3]-=deltamov;
             }
-            else if(text[0]==XK_d)
+            else if(keycode== XKeysymToKeycode(dis,XK_d))
             {
-                //mytransform[0][3]+=deltamov;
+                mytransform[0][3]+=deltamov;
             }
-            else if(text[0]==XK_r)
+            else if(keycode== XKeysymToKeycode(dis,XK_r))
             {
-                //mytransform[2][3]+=deltamov;
+                mytransform[2][3]+=deltamov;
             }
-            else if(text[0]==XK_f)
+            else if(keycode== XKeysymToKeycode(dis,XK_f))
             {
-                //mytransform[2][3]-=deltamov;
+                mytransform[2][3]-=deltamov;
             }
         }
         

@@ -80,6 +80,18 @@ void clear_image()
            screen_img->bits_per_pixel/8);
 }
 
+
+void clear_all_buffers()
+{
+    int buffer_size = screen_img->width*screen_img->height;
+    
+    for(int i = 0;i<buffer_size;++i)
+    {
+        depth_buffer[i]=1.0f/0.0f;
+        screen_img->data[i]=0;
+    }
+}
+
 void UpdateScreenData(int width,int height)
 {
     XImage* old_screen_img = screen_img;
@@ -90,10 +102,10 @@ void UpdateScreenData(int width,int height)
                               32, 0);
     
     if(old_screen_img) XDestroyImage(old_screen_img);
-    
+    if(depth_buffer) free(depth_buffer);
     depth_buffer = malloc(width*height*sizeof(float));
-    clear_depth_buffer();
     //printf("isinf(depth_buffer[0])=%d\n",isinf(depth_buffer[0]));
+    clear_all_buffers();
 }
 
 
@@ -129,7 +141,7 @@ void close_x() {
     exit(1);				
 };
 
-void get_window_size(int* width,int* height)
+void get_window_size(unsigned int* width,unsigned int* height)
 {
     
     Window root_return;
@@ -146,13 +158,13 @@ void get_window_size(int* width,int* height)
 
 
 
-void draw_triangle(struct Vec4* points,int index1,int index2,int index3)
+void draw_triangle( Vec4* points,int index1,int index2,int index3)
 {
     unsigned int width=0,height=0;
     
-    struct Vec4 p1 = points[index1];
-    struct Vec4 p2 = points[index2];
-    struct Vec4 p3 = points[index3];
+    Vec4 p1 = points[index1];
+    Vec4 p2 = points[index2];
+    Vec4 p3 = points[index3];
     
     float factorx = screen_img->width/scale_x;
     float factory = screen_img->height/scale_y;
@@ -177,10 +189,10 @@ XPoint to_screen_coords(float x,float y)
     return (XPoint){.x=screen_img->width*newx,.y=screen_img->height*newy};
 }
 
-void pipeline(struct Vec4* points,int index0,int index1,int index2,
+void pipeline( Vec4* points,int index0,int index1,int index2,
               void* attributes,int attributes_size,int aindex0,int aindex1,int aindex2)
 {
-    struct Vec4 triangle[3]={points[index0],points[index1],points[index2]};
+    Vec4 triangle[3]={points[index0],points[index1],points[index2]};
     
     
     void* attribute0 = attributes+attributes_size*aindex0;
@@ -260,10 +272,22 @@ void pipeline(struct Vec4* points,int index0,int index1,int index2,
     float deltax = 1.0f/screen_img->width;
     float deltay = 1.0f/screen_img->height;
     
-    for(float x = minX;x<=maxX;x+=deltax)
+    //used to avoid redrawing samepixel
+    //fixes artifacs and may get some perf
+    int drawn_pos = -1;
+    
+    for(float y = maxY;y>=minY;y-=deltay)
     {
-        for(float y = minY;y<=maxY;y+=deltay)
+        for(float x = minX;x<=maxX;x+=deltax)
         {
+            
+            XPoint pixel_coords = to_screen_coords(x,y);
+            int buffer_pos = pixel_coords.x+width*pixel_coords.y;
+            if(pixel_coords.x<0 || pixel_coords.x>=width) continue;
+            if(pixel_coords.y<0 || pixel_coords.y>=height) continue;
+            if(buffer_pos<=drawn_pos) continue;
+            drawn_pos=buffer_pos;
+            
             float lambda0 = d1y2y * x  + d2x1x * y + lambda0_prime;
             if(lambda0 < 0) continue;
             
@@ -280,19 +304,10 @@ void pipeline(struct Vec4* points,int index0,int index1,int index2,
                 //callback
                 //use globals as uniforms?
                 float z = lambda0*t0z+lambda1*t1z+lambda2*t2z;
-                XPoint pixel_coords = to_screen_coords(x,y);
-                //Is there a way to do this without branching?
-                if(pixel_coords.x<0 || pixel_coords.x>=width) continue;
-                if(pixel_coords.y<0 || pixel_coords.y>=height) continue;
-                
-                int buffer_pos = pixel_coords.x+width*pixel_coords.y;
-                
                 if(z>=depth_buffer[buffer_pos]) continue;
                 depth_buffer[buffer_pos]=z;
                 
-                struct Vec4 pixel_color = fragmentShader(x,y,triangle,lambda0,lambda1,lambda2,vertexOut);//callback
-                
-                
+                Vec4 pixel_color = fragmentShader(x,y,triangle,lambda0,lambda1,lambda2,vertexOut);//callback
                 
                 int32_t * pixels = (int32_t*)(screen_img->data);
                 {//alpha blend

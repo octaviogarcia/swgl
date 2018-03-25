@@ -12,11 +12,11 @@ for f in p.iterdir():
   cfiles.append(f)
 
 
-common_flags = ["-pthread","-mmmx","-msse"]
+common_flags = ["-pthread","-msse4.1"]
 
 #compiling_flags = ["-Og","-g",*common_flags]
 compiling_flags = ["-O2","-march=native","-pipe",*common_flags]
-command = ["gcc",*compiling_flags,"-o"]
+command = ["clang",*compiling_flags,"-o"]
 mid_flag = ["-c"]
 
 

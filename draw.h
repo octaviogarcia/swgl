@@ -21,6 +21,7 @@ extern GC gc;
 extern XVisualInfo visinfo;
 extern XImage * screen_img;
 extern float* depth_buffer;
+extern bool* drawn_buffer;
 
 
 extern float scale_y;
@@ -72,21 +73,22 @@ Color colori_delta_red(Color color,int32_t delta);
 Color colori_delta_green(Color color,int32_t delta);
 Color colori_delta_blue(Color color,int32_t delta);
 
-void get_window_size(int* width,int* height);
+void get_window_size(unsigned int* width,unsigned int* height);
 
 //Deprecated?
-void draw_triangle(struct Vec4* points,int index1,int index2,int index3);
+void draw_triangle( Vec4* points,int index1,int index2,int index3);
 
 XPoint to_screen_coords(float x,float y);
 
-void pipeline(struct Vec4* points,int index0,int index1,int index2,
+void pipeline( Vec4* points,int index0,int index1,int index2,
               void* attributes,int attributes_size,int aindex0,int aindex1,int aindex2);
 
 //TODO: convert these to function pointers ;)
-void* vertexShader(struct Vec4* vertex,void* attribute);
-struct Vec4 fragmentShader(float fragx,float fragy,struct Vec4 triangle[3],float lambda0,
-                           float lambda1, float lambda2,void * vertexOut[3]);
+void* vertexShader( Vec4* vertex,void* attribute);
+Vec4 fragmentShader(float fragx,float fragy, Vec4 triangle[3],float lambda0,
+                    float lambda1, float lambda2,void * vertexOut[3]);
 void UpdateScreenData(int width,int height);
 void clear_depth_buffer();
 void clear_image();
+void clear_all_buffers();
 #endif
