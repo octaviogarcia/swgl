@@ -12,12 +12,7 @@ float scale_y = 1.0;
 float scale_z = 1.0;
 
 #define DEFAULTWINDOWWIDTH 300
-#define DEFAULTWINDOWHEIGHT 300
-int window_width_px=DEFAULTWINDOWWIDTH;
-int window_height_px=DEFAULTWINDOWHEIGHT; 
-//"how much" you need to move, to move to another pixel
-float deltax = 1.0f/DEFAULTWINDOWWIDTH;//divided by width
-float deltay = 1.0f/DEFAULTWINDOWHEIGHT;//divided by height
+#define DEFAULTWINDOWHEIGHT 300 
 XVisualInfo visinfo = {};
 XImage * screen_img = NULL;
 
@@ -92,7 +87,7 @@ void init_x() {
     //printf("black = %lu, white = %lu, sizeof = %lu\n",black,white,sizeof(long));
     
     win=XCreateSimpleWindow(dis,DefaultRootWindow(dis),0,0,	
-                            window_width_px, window_height_px, 0, colori(255,255,255).integer,colori(0,0,0).integer);
+                            DEFAULTWINDOWWIDTH, DEFAULTWINDOWHEIGHT, 0, colori(255,255,255).integer,colori(0,0,0).integer);
     XSetStandardProperties(dis,win,"swgl","swgl",None,NULL,0,NULL);
     //https://tronche.com/gui/x/xlib/events/mask.html#NoEventMask
     XSelectInput(dis, win, ExposureMask|ButtonPressMask|ButtonReleaseMask|PointerMotionMask|KeyPressMask | ResizeRequest);
@@ -107,7 +102,7 @@ void init_x() {
             printf("Couldnt match visual info\n");
         }
     }
-    UpdateScreenData(window_width_px,window_height_px);
+    UpdateScreenData(DEFAULTWINDOWWIDTH,DEFAULTWINDOWHEIGHT);
 };
 
 void close_x() {
@@ -144,8 +139,8 @@ void draw_triangle(struct Vec4* points,int index1,int index2,int index3)
     struct Vec4 p2 = points[index2];
     struct Vec4 p3 = points[index3];
     
-    float factorx = window_width_px/scale_x;
-    float factory = window_height_px/scale_y;
+    float factorx = screen_img->width/scale_x;
+    float factory = screen_img->height/scale_y;
     
     XPoint v1 = (XPoint){.x=factorx*p1.x,.y=factory*(scale_y-p1.y)};
     XPoint v2 = (XPoint){.x=factorx*p2.x,.y=factory*(scale_y-p2.y)};
@@ -164,14 +159,12 @@ XPoint to_screen_coords(float x,float y)
 {
     float newx = 0.5f*x*scale_z/scale_x + 0.5f; //(x*scale_z+scale_x)/(2*scale_x)
     float newy = 0.5f - 0.5f*y*scale_z/scale_y; //1.0 minus (y*scale_z+scale_y)/(2*scale_y)..
-    return (XPoint){.x=window_width_px*newx,.y=window_height_px*newy};
+    return (XPoint){.x=screen_img->width*newx,.y=screen_img->height*newy};
 }
 
 void pipeline(struct Vec4* points,int index0,int index1,int index2,
               void* attributes,int attributes_size,int aindex0,int aindex1,int aindex2)
 {
-    
-    
     struct Vec4 triangle[3]={points[index0],points[index1],points[index2]};
     
     
@@ -221,15 +214,6 @@ void pipeline(struct Vec4* points,int index0,int index1,int index2,
     float maxY = maxf(t0y, maxf(t1y, t2y));
     float minY = minf(t0y, minf(t1y, t2y));
     
-#if 0
-    printf("Vertex1 %f %f %f %f\n",t0x,t0y,triangle[0].z,triangle[0].w);
-    printf("Vertex2 %f %f %f %f\n",t1x,t1y,triangle[1].z,triangle[1].w);
-    printf("Vertex3 %f %f %f %f\n",t2x,t2y,triangle[2].z,triangle[2].w);
-    printf("X %f %f Y %f %f\n",minX,maxX,minY,maxY);
-    printf("width %d height %d\n",window_width_px,window_height_px);
-    printf("deltax %f deltay %f\n",deltax,deltay);
-#endif
-    
     //https://stackoverflow.com/questions/2049582/how-to-determine-if-a-point-is-in-a-2d-triangle
     //https://en.wikipedia.org/wiki/Barycentric_coordinate_system
     
@@ -249,6 +233,13 @@ void pipeline(struct Vec4* points,int index0,int index1,int index2,
     if(minY < -scale_y) minY = -scale_y;
     if(maxX >  scale_x) maxX = scale_y;
     if(maxY >  scale_y) maxY = scale_y;
+    
+    int width = screen_img->width;
+    int height = screen_img->height;
+    
+    //"how much" you need to move, to move to another pixel
+    float deltax = 1.0f/screen_img->width;
+    float deltay = 1.0f/screen_img->height;
     
     for(float x = minX;x<=maxX;x+=deltax)
     {
@@ -281,13 +272,11 @@ void pipeline(struct Vec4* points,int index0,int index1,int index2,
                 XPoint pixel_coords = to_screen_coords(x,y);
                 
                 //Is there a way to do this without branching?
-                if(pixel_coords.x<0 || pixel_coords.x>=window_width_px) continue;
-                if(pixel_coords.y<0 || pixel_coords.y>=window_height_px) continue;
-                //pixel_coords.x = clamp(pixel_coords.x,0,window_width_px-1);
-                //pixel_coords.y = clamp(pixel_coords.y,0,window_height_px-1);
+                if(pixel_coords.x<0 || pixel_coords.x>=width) continue;
+                if(pixel_coords.y<0 || pixel_coords.y>=height) continue;
                 
                 int32_t * pixels = (int32_t*)(screen_img->data);
-                pixels[pixel_coords.x+screen_img->width*pixel_coords.y]=c.integer;
+                pixels[pixel_coords.x+width*pixel_coords.y]=c.integer;
             }
         }
     }

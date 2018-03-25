@@ -80,10 +80,6 @@ void* draw_thread(void* usr_info)
         struct Vec4 colors[] = {VEC4(1,0,0,1),VEC4(0,1,0,1),VEC4(0,0,1,1),VEC4(1,1,1,1)};
         //white background
         
-        //pthread_mutex_lock(&img_data_lock);
-        
-        
-        
         pthread_mutex_lock(&img_data_lock);
         
         transform=&identity;
@@ -100,7 +96,7 @@ void* draw_thread(void* usr_info)
         
         XPutImage(dis, win, gc, screen_img, 
                   0, 0, 0, 0, 
-                  window_width_px, window_height_px);
+                  screen_img->width, screen_img->height);
         
         XUnlockDisplay(dis);
         
@@ -108,8 +104,6 @@ void* draw_thread(void* usr_info)
         
         dt =((double)tend.tv_sec + 1.0e-9*tend.tv_nsec) - 
             ((double)tstart.tv_sec + 1.0e-9*tstart.tv_nsec);
-        
-        //pthread_mutex_unlock(&img_data_lock);
     }
     return NULL;
 }
@@ -167,10 +161,9 @@ int main (int argc,char ** argv)
             
             pthread_mutex_lock(&img_data_lock);
             
-            get_window_size(&window_width_px,&window_height_px);
-            deltax = 1.0f/window_width_px;
-            deltay = 1.0f/window_height_px;
-            UpdateScreenData(window_width_px,window_height_px);
+            int width=0,height=0;
+            get_window_size(&width,&height);
+            UpdateScreenData(width,height);
             
             pthread_mutex_unlock(&img_data_lock);
         }

@@ -24,10 +24,6 @@ extern float scale_y;
 extern float scale_x;
 extern float scale_z;
 
-extern int window_width_px;
-extern int window_height_px;
-extern float deltax;
-extern float deltay;
 
 #define IS_BIG_ENDIAN (!*(unsigned char *)&(uint16_t){1})
 
