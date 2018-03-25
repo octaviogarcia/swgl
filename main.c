@@ -16,7 +16,7 @@
 
 _Atomic bool close_program = false;
 _Atomic double dt = 1/30.0;
-pthread_mutex_t screen_img_lock = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t img_data_lock = PTHREAD_MUTEX_INITIALIZER;
 
 float mytransform[4][4] = {
     {1.0f,0.0f,0.0f,0.0f},
@@ -79,22 +79,29 @@ void* draw_thread(void* usr_info)
         
         struct Vec4 colors[] = {VEC4(1,0,0,1),VEC4(0,1,0,1),VEC4(0,0,1,1),VEC4(1,1,1,1)};
         //white background
+        
+        //pthread_mutex_lock(&img_data_lock);
+        
+        
+        
+        pthread_mutex_lock(&img_data_lock);
+        
         transform=&identity;
-        
-        //pthread_mutex_lock(&screen_img_lock);
-        
         pipeline(points,5,6,7,colors,sizeof(typeof(colors[0])),3,3,3);
         pipeline(points,5,7,8,colors,sizeof(typeof(colors[0])),3,3,3);
         //colorful triangle
+        
         transform=&mytransform;
         pipeline(points,0,1,2,colors,sizeof(typeof(colors[0])),0,1,2);
         
+        pthread_mutex_unlock(&img_data_lock);
+        
         XLockDisplay(dis);
-        {
-            XPutImage(dis, win, gc, screen_img, 
-                      0, 0, 0, 0, 
-                      window_width_px, window_height_px);
-        }
+        
+        XPutImage(dis, win, gc, screen_img, 
+                  0, 0, 0, 0, 
+                  window_width_px, window_height_px);
+        
         XUnlockDisplay(dis);
         
         clock_gettime(CLOCK_MONOTONIC, &tend);
@@ -102,7 +109,7 @@ void* draw_thread(void* usr_info)
         dt =((double)tend.tv_sec + 1.0e-9*tend.tv_nsec) - 
             ((double)tstart.tv_sec + 1.0e-9*tstart.tv_nsec);
         
-        //pthread_mutex_unlock(&screen_img_lock);
+        //pthread_mutex_unlock(&img_data_lock);
     }
     return NULL;
 }
@@ -124,7 +131,7 @@ int main (int argc,char ** argv)
     XEvent event;		/* the XEvent declaration !!! */	
     char text[255];		/* a char buffer for KeyPress Events */
     
-    if (pthread_mutex_init(&screen_img_lock, NULL) != 0)
+    if (pthread_mutex_init(&img_data_lock, NULL) != 0)
     {
         printf("\n mutex init failed\n");
         return 1;
@@ -156,13 +163,16 @@ int main (int argc,char ** argv)
         if (event.type==Expose && event.xexpose.count==0) 
         {
             /*window exposed, get new parameters */
+            
+            
+            pthread_mutex_lock(&img_data_lock);
+            
             get_window_size(&window_width_px,&window_height_px);
             deltax = 1.0f/window_width_px;
             deltay = 1.0f/window_height_px;
             UpdateScreenData(window_width_px,window_height_px);
             
-            //pthread_mutex_lock(&screen_img_lock);
-            //pthread_mutex_unlock(&screen_img_lock);
+            pthread_mutex_unlock(&img_data_lock);
         }
         
         
@@ -202,7 +212,7 @@ int main (int argc,char ** argv)
                 close_program = true;
                 pthread_join(draw_thread_descriptor,NULL);
                 pthread_join(logger_thread_descriptor,NULL);
-                pthread_mutex_destroy(&screen_img_lock);
+                pthread_mutex_destroy(&img_data_lock);
                 close_x();
             }
             else if(keysym == XK_c)

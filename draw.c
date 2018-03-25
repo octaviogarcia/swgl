@@ -167,8 +167,6 @@ XPoint to_screen_coords(float x,float y)
     return (XPoint){.x=window_width_px*newx,.y=window_height_px*newy};
 }
 
-
-
 void pipeline(struct Vec4* points,int index0,int index1,int index2,
               void* attributes,int attributes_size,int aindex0,int aindex1,int aindex2)
 {
@@ -289,7 +287,7 @@ void pipeline(struct Vec4* points,int index0,int index1,int index2,
                 //pixel_coords.y = clamp(pixel_coords.y,0,window_height_px-1);
                 
                 int32_t * pixels = (int32_t*)(screen_img->data);
-                pixels[pixel_coords.x+window_width_px*pixel_coords.y]=c.integer;
+                pixels[pixel_coords.x+screen_img->width*pixel_coords.y]=c.integer;
             }
         }
     }
