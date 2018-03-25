@@ -86,5 +86,5 @@ void pipeline(struct Vec4* points,int index0,int index1,int index2,
 void* vertexShader(struct Vec4* vertex,void* attribute);
 struct Vec4 fragmentShader(float fragx,float fragy,struct Vec4 triangle[3],float lambda0,
                            float lambda1, float lambda2,void * vertexOut[3]);
-void UpdateScreenImg();
+void UpdateScreenData(int width,int height);
 #endif

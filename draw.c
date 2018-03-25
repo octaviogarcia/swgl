@@ -66,13 +66,13 @@ Color colori_delta_blue(Color color,int32_t delta)
     return color;
 }
 
-void UpdateScreenImg()
+void UpdateScreenData(int width,int height)
 {
     XImage* old_screen_img = screen_img;
-    char* mem = malloc(window_width_px*window_height_px*4);//4B per pixel
+    char* mem = malloc(width*height*4);//4B per pixel
     
     screen_img = XCreateImage(dis, visinfo.visual, visinfo.depth,
-                              ZPixmap, 0, mem, window_width_px, window_height_px,
+                              ZPixmap, 0, mem, width, height,
                               32, 0);
     
     if(old_screen_img) XDestroyImage(old_screen_img);
@@ -107,7 +107,7 @@ void init_x() {
             printf("Couldnt match visual info\n");
         }
     }
-    UpdateScreenImg();
+    UpdateScreenData(window_width_px,window_height_px);
 };
 
 void close_x() {
