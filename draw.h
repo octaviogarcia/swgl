@@ -9,6 +9,8 @@
 #include <X11/Xutil.h>
 #include <X11/Xos.h>
 #include <pthread.h>
+#include <math.h>
+#include <stdbool.h>
 
 #include "math.h"
 
@@ -18,6 +20,7 @@ extern Window win;
 extern GC gc;
 extern XVisualInfo visinfo;
 extern XImage * screen_img;
+extern float* depth_buffer;
 
 
 extern float scale_y;
@@ -84,4 +87,6 @@ void* vertexShader(struct Vec4* vertex,void* attribute);
 struct Vec4 fragmentShader(float fragx,float fragy,struct Vec4 triangle[3],float lambda0,
                            float lambda1, float lambda2,void * vertexOut[3]);
 void UpdateScreenData(int width,int height);
+void clear_depth_buffer();
+void clear_image();
 #endif

@@ -1,14 +1,21 @@
 #include "math.h"
-
+//https://stackoverflow.com/questions/427477/fastest-way-to-clamp-a-real-fixed-floating-point-value
 float maxf(float a,float b)
 {
     if(a>b) return a;
     return b;
+    
 }
+
 float minf(float a,float b)
 {
     if(a>b) return b;
     return a;
+    
+}
+float clampf(float f,float floor,float roof)
+{
+    return maxf(floor,minf(roof,f));
 }
 
 float dotProduct(struct Vec4 v1,struct Vec4 v2)

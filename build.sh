@@ -12,8 +12,10 @@ for f in p.iterdir():
   cfiles.append(f)
 
 
-#compiling_flags = ["-Og","-g","-pthread"]
-compiling_flags = ["-O2","-march=native","-pipe","-pthread"]
+common_flags = ["-pthread","-mmmx","-msse"]
+
+#compiling_flags = ["-Og","-g",*common_flags]
+compiling_flags = ["-O2","-march=native","-pipe",*common_flags]
 command = ["gcc",*compiling_flags,"-o"]
 mid_flag = ["-c"]
 
@@ -28,7 +30,7 @@ for cfile in cfiles:
 
 #linking
 
-linking_flags = ["-lm","-lX11","-pthread"]
+linking_flags = ["-lm","-lX11",*common_flags]
 
 ofiles_str = [x.name for x in ofiles]
 call([*command,"main",*ofiles_str,*linking_flags])

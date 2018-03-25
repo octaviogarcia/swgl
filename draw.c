@@ -15,6 +15,7 @@ float scale_z = 1.0;
 #define DEFAULTWINDOWHEIGHT 300 
 XVisualInfo visinfo = {};
 XImage * screen_img = NULL;
+float * depth_buffer = NULL;
 
 Color colori(uint8_t red,uint8_t green,uint8_t blue)
 {
@@ -61,6 +62,24 @@ Color colori_delta_blue(Color color,int32_t delta)
     return color;
 }
 
+void clear_depth_buffer()
+{
+    int buffer_size = screen_img->width*screen_img->height;
+    
+    for(int i = 0;i<buffer_size;++i)
+    {
+        depth_buffer[i]=1.0f/0.0f;
+    }
+    
+}
+void clear_image()
+{
+    memset((screen_img->data),0,
+           screen_img->width*
+           screen_img->height*
+           screen_img->bits_per_pixel/8);
+}
+
 void UpdateScreenData(int width,int height)
 {
     XImage* old_screen_img = screen_img;
@@ -71,20 +90,16 @@ void UpdateScreenData(int width,int height)
                               32, 0);
     
     if(old_screen_img) XDestroyImage(old_screen_img);
+    
+    depth_buffer = malloc(width*height*sizeof(float));
+    clear_depth_buffer();
+    //printf("isinf(depth_buffer[0])=%d\n",isinf(depth_buffer[0]));
 }
 
 
 void init_x() {
-    /* get the colors black and white (see section for details) */        
-    
-    
     dis=XOpenDisplay((char *)0);
     screen=DefaultScreen(dis);
-    
-    //unsigned long black,white;
-    //black=BlackPixel(dis,screen),
-    //white=WhitePixel(dis, screen);
-    //printf("black = %lu, white = %lu, sizeof = %lu\n",black,white,sizeof(long));
     
     win=XCreateSimpleWindow(dis,DefaultRootWindow(dis),0,0,	
                             DEFAULTWINDOWWIDTH, DEFAULTWINDOWHEIGHT, 0, colori(255,255,255).integer,colori(0,0,0).integer);
@@ -193,14 +208,18 @@ void pipeline(struct Vec4* points,int index0,int index1,int index2,
     if(triangle[0].z <= 0.05f) return;
     //Should we do the same for too far?
     
-    triangle[0].x/=triangle[0].z;
-    triangle[0].y/=triangle[0].z;
+    float t0z=triangle[0].z;
+    float t1z=triangle[1].z;
+    float t2z=triangle[2].z;
+    
+    triangle[0].x/=t0z;
+    triangle[0].y/=t0z;
     triangle[0].z=1;
-    triangle[1].x/=triangle[1].z;
-    triangle[1].y/=triangle[1].z;
+    triangle[1].x/=t1z;
+    triangle[1].y/=t1z;
     triangle[1].z=1;
-    triangle[2].x/=triangle[2].z;
-    triangle[2].y/=triangle[2].z;
+    triangle[2].x/=t2z;
+    triangle[2].y/=t2z;
     triangle[2].z=1;
     
     float t0x = triangle[0].x;
@@ -260,7 +279,41 @@ void pipeline(struct Vec4* points,int index0,int index1,int index2,
             {
                 //callback
                 //use globals as uniforms?
+                float z = lambda0*t0z+lambda1*t1z+lambda2*t2z;
+                XPoint pixel_coords = to_screen_coords(x,y);
+                //Is there a way to do this without branching?
+                if(pixel_coords.x<0 || pixel_coords.x>=width) continue;
+                if(pixel_coords.y<0 || pixel_coords.y>=height) continue;
+                
+                int buffer_pos = pixel_coords.x+width*pixel_coords.y;
+                
+                if(z>=depth_buffer[buffer_pos]) continue;
+                depth_buffer[buffer_pos]=z;
+                
                 struct Vec4 pixel_color = fragmentShader(x,y,triangle,lambda0,lambda1,lambda2,vertexOut);//callback
+                
+                
+                
+                int32_t * pixels = (int32_t*)(screen_img->data);
+                {//alpha blend
+                    Color behind_pixeli = {.integer=pixels[buffer_pos]};
+                    
+                    float behinda = behind_pixeli.rgb.a/255.0f;
+                    float behindr = behinda*behind_pixeli.rgb.r/255.0f;
+                    float behindg = behinda*behind_pixeli.rgb.g/255.0f;
+                    float behindb = behinda*behind_pixeli.rgb.b/255.0f;
+                    
+                    float a = pixel_color.w;
+                    float r = a*pixel_color.x;
+                    float g = a*pixel_color.y;
+                    float b = a*pixel_color.z;
+                    float _a = 1.0f-a;
+                    
+                    pixel_color.x = r + behindr*_a;
+                    pixel_color.y = g + behindg*_a;
+                    pixel_color.z = b + behindb*_a;
+                    pixel_color.w = a + behinda*_a;
+                }
                 
                 Color c;
                 c.rgb.r = clamp(pixel_color.x*255,0,255);
@@ -268,15 +321,8 @@ void pipeline(struct Vec4* points,int index0,int index1,int index2,
                 c.rgb.b = clamp(pixel_color.z*255,0,255);
                 c.rgb.a = clamp(pixel_color.w*255,0,255);
                 
+                pixels[buffer_pos]=c.integer;
                 
-                XPoint pixel_coords = to_screen_coords(x,y);
-                
-                //Is there a way to do this without branching?
-                if(pixel_coords.x<0 || pixel_coords.x>=width) continue;
-                if(pixel_coords.y<0 || pixel_coords.y>=height) continue;
-                
-                int32_t * pixels = (int32_t*)(screen_img->data);
-                pixels[pixel_coords.x+width*pixel_coords.y]=c.integer;
             }
         }
     }

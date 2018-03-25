@@ -77,16 +77,21 @@ void* draw_thread(void* usr_info)
     {		
         clock_gettime(CLOCK_MONOTONIC, &tstart);
         
-        struct Vec4 colors[] = {VEC4(1,0,0,1),VEC4(0,1,0,1),VEC4(0,0,1,1),VEC4(1,1,1,1)};
-        //white background
+        struct Vec4 colors[] = {VEC4(1,0,0,0.5f),VEC4(0,1,0,0.5f),VEC4(0,0,1,0.5f),VEC4(0.5f,0.5f,1,1)};
+        
         
         pthread_mutex_lock(&img_data_lock);
         
+        clear_depth_buffer();
+        clear_image();
+        
+        
+        //background
         transform=&identity;
         pipeline(points,5,6,7,colors,sizeof(typeof(colors[0])),3,3,3);
         pipeline(points,5,7,8,colors,sizeof(typeof(colors[0])),3,3,3);
-        //colorful triangle
         
+        //colorful triangle
         transform=&mytransform;
         pipeline(points,0,1,2,colors,sizeof(typeof(colors[0])),0,1,2);
         
