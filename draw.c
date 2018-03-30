@@ -219,19 +219,32 @@ void pipeline( Vec4* points,int index0,int index1,int index2,
     if(triangle[0].z <= 0.05f) return;*/
     //Should we do the same for too far?
     
-    float t0z=triangle[0].z;
-    float t1z=triangle[1].z;
-    float t2z=triangle[2].z;
+    //needed for the z buffer, if we divide it by w you would get 1...
+    float t0z = triangle[0].z;
+    float t1z = triangle[1].z;
+    float t2z = triangle[2].z;
     
-    triangle[0].x/=t0z;
-    triangle[0].y/=t0z;
-    triangle[0].z=1;
-    triangle[1].x/=t1z;
-    triangle[1].y/=t1z;
-    triangle[1].z=1;
-    triangle[2].x/=t2z;
-    triangle[2].y/=t2z;
-    triangle[2].z=1;
+    float t0w = triangle[0].w;
+    float t1w = triangle[1].w;
+    float t2w = triangle[2].w;
+    
+    triangle[0].x/=t0w;
+    triangle[0].y/=t0w;
+    triangle[0].z/=t0w;
+    triangle[0].w=1;
+    
+    
+    triangle[1].x/=t1w;
+    triangle[1].y/=t1w;
+    triangle[1].z/=t1w;
+    triangle[1].w=1;
+    
+    
+    triangle[2].x/=t2w;
+    triangle[2].y/=t2w;
+    triangle[2].z/=t2w;
+    triangle[2].w=1;
+    
     
     float t0x = triangle[0].x;
     float t0y = triangle[0].y;
@@ -239,6 +252,7 @@ void pipeline( Vec4* points,int index0,int index1,int index2,
     float t1y = triangle[1].y;
     float t2x = triangle[2].x;
     float t2y = triangle[2].y;
+    
     float maxX = maxf(t0x, maxf(t1x, t2x));
     float minX = minf(t0x, minf(t1x, t2x));
     float maxY = maxf(t0y, maxf(t1y, t2y));

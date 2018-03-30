@@ -12,29 +12,55 @@
 
 #include "draw.h"
 #include "math.h"
-//TODO: proper projection, with FOV and everything
+//TODO: proper projection, with FOV and everythig
+//backface of triangle not drawing? might be just the "background" being forward
 
 _Atomic bool close_program = false;
 _Atomic double dt = 1/30.0;
 pthread_mutex_t img_data_lock = PTHREAD_MUTEX_INITIALIZER;
 
+
+
+float perspective[4][4] = {
+    {1.0f,0.0f,0.0f,0.0f},
+    {0.0f,1.0f,0.0f,0.0f},
+    {0.0f,0.0f,1.0f,0.0f},
+    {0.0f,0.0f,1.0f,0.0f}};
+
+void setPerspective(float fov,float aspect,float near,float far)
+{
+    
+#if 0
+    float f =  1.0f/tan((PI / 180.0f)*fov/2.0f);
+    perspective[0][0]=f/aspect;
+    perspective[1][1]=f;
+    perspective[2][2]=far/(far-near);
+    perspective[2][3]=1.0f;
+    perspective[3][2]=-near*far/(far-near);//??
+#endif
+    
+    return;
+}
+
+
 float mytransform[4][4] = {
     {1.0f,0.0f,0.0f,0.0f},
     {0.0f,1.0f,0.0f,0.0f},
     {0.0f,0.0f,1.0f,0.0f},
-    {0.0f,0.0f,0.0f,1.0f}};
+    {0.0f,0.0f,0.0f,0.0f}};
 
+//set w to z so it gets converted to screenspace when dividing by it
 float identity[4][4] = {
     {1.0f,0.0f,0.0f,0.0f},
     {0.0f,1.0f,0.0f,0.0f},
     {0.0f,0.0f,1.0f,0.0f},
-    {0.0f,0.0f,0.0f,1.0f}};
+    {0.0f,0.0f,1.0f,0.0f}};
 
 float (*transform)[4][4];
 
 void* vertexShader(Vec4* vertex,void* attribute)
 {
-    *vertex = apply_matrix4x4(*transform,*vertex);
+    *vertex = apply_matrix4x4(perspective,apply_matrix4x4(*transform,*vertex));
     return attribute;
 }
 
@@ -57,6 +83,8 @@ Vec4 fragmentShader(float fragx,float fragy, Vec4 triangle[3],float lambda0,floa
 }
 void* draw_thread(void* usr_info)
 {
+    setPerspective(120.0f,9.0f/16.0f,0.1f,10.0f);
+    
     Vec4 points[] = { 
         VEC4(2,2,2,1), //0
         VEC4(-2,2,2,1), //1
@@ -72,7 +100,7 @@ void* draw_thread(void* usr_info)
         VEC4(0.25f,-0.25f,0.75f,1)//11
     }; 
     
-    Vec4 colors[] = {VEC4(1,0,0,0.3f),VEC4(0,1,0,0.3f),VEC4(0,0,1,0.3f),VEC4(0.5f,0.5f,1,1)};
+    Vec4 colors[] = {VEC4(1,0,0,1),VEC4(0,1,0,1),VEC4(0,0,1,1),VEC4(0.5f,0.5f,1,1)};
     
     int num_points = sizeof points / sizeof points[0];
     int oldx = -1;
@@ -90,10 +118,7 @@ void* draw_thread(void* usr_info)
         clear_all_buffers();
         
         
-        //background
-        transform=&identity;
-        pipeline(points,0,1,2,colors,sizeof(typeof(colors[0])),3,3,3);
-        pipeline(points,0,2,3,colors,sizeof(typeof(colors[0])),3,3,3);
+        
         
         
         //colorful cube
@@ -133,6 +158,13 @@ void* draw_thread(void* usr_info)
         //Front
         pipeline(points,4,5,6,colors,sizeof(typeof(colors[0])),0,1,2);
         pipeline(points,4,6,7,colors,sizeof(typeof(colors[0])),0,1,2);
+        
+        
+        //background
+        transform=&identity;
+        pipeline(points,0,1,2,colors,sizeof(typeof(colors[0])),3,3,3);
+        pipeline(points,0,2,3,colors,sizeof(typeof(colors[0])),3,3,3);
+        
         
         
         pthread_mutex_unlock(&img_data_lock);

@@ -21,7 +21,6 @@ extern GC gc;
 extern XVisualInfo visinfo;
 extern XImage * screen_img;
 extern float* depth_buffer;
-extern bool* drawn_buffer;
 
 
 extern float scale_y;
