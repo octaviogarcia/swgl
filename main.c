@@ -13,6 +13,7 @@
 #include "draw.h"
 #include "math.h"
 //TODO: proper projection, with FOV and everythig
+//FIX triangles not drawing with tight viewing angles...
 
 _Atomic bool close_program = false;
 _Atomic double dt = 1/30.0;
@@ -61,13 +62,41 @@ void* vertexShader(Vec4* vertex,void* attribute)
     return attribute;
 }
 
-Vec4 fragmentShader(float fragx,float fragy, Vec4 triangle[3],float lambda0,float lambda1, float lambda2,void * vertexOut[3])
+Vec4 LightPos = VEC4(0.75f,0.75f,0.15f,1);
+Vec4 LightColor = VEC4(2,2,2,2);
+float ambient = 0.2f;
+
+Vec4 fragmentShader(float fragx,float fragy,float fragz, Vec4 triangle[3],float lambda0,float lambda1, float lambda2,void * vertexOut[3])
 {
+    Vec4 normal;
+    {
+        Vec4 to1 = VEC4(triangle[1].x-triangle[0].x,
+                        triangle[1].y-triangle[0].y,
+                        triangle[1].z-triangle[0].z,
+                        1);
+        
+        Vec4 to2 = VEC4(triangle[2].x-triangle[0].x,
+                        triangle[2].y-triangle[0].y,
+                        triangle[2].z-triangle[0].z,
+                        1);
+        
+        normal = normalizeV3(crossProduct(to2,to1));
+    }
+    Vec4 lightDir;
+    lightDir.x = LightPos.x - fragx;
+    lightDir.y = LightPos.y - fragy;
+    lightDir.z = LightPos.z - fragz;
+    lightDir.w = 1;
+    
+    float diff = maxf(dotProductV3(normal,lightDir),0.0f);
+    Vec4 diffused = scale(diff,LightColor);
+    
+    Vec4 result;
+    
+#if 0
     Vec4 color0 = *( Vec4*)vertexOut[0];
     Vec4 color1 = *( Vec4*)vertexOut[1];
     Vec4 color2 = *( Vec4*)vertexOut[2];
-    
-    Vec4 result;
     
     {
         Vec4 scaled0 = scale(lambda0,color0);
@@ -75,9 +104,22 @@ Vec4 fragmentShader(float fragx,float fragy, Vec4 triangle[3],float lambda0,floa
         Vec4 scaled2 = scale(lambda2,color2);
         result = add(scaled0,add(scaled1,scaled2));
     }
+#else
+    result = VEC4(1,0.5f,0,1);
+#endif
+    result = scale(ambient,result);
+    result.w/=ambient;
     
-    return result;
+    
+    
+    return VEC4(
+        result.x*diffused.x,
+        result.y*diffused.y,
+        result.z*diffused.z,
+        result.w);
 }
+
+
 void* draw_thread(void* usr_info)
 {
     
@@ -96,7 +138,11 @@ void* draw_thread(void* usr_info)
         VEC4(0.25f,-0.25f,0.75f,1)//11
     }; 
     
-    Vec4 colors[] = {VEC4(1,0,0,1),VEC4(0,1,0,1),VEC4(0,0,1,1),VEC4(0.5f,0.5f,1,1)};
+    Vec4 colors[] = {
+        VEC4(1,0,0,1),
+        VEC4(0,1,0,1),
+        VEC4(0,0,1,1),
+        VEC4(0.5f,0.5f,1,1)};
     
     int num_points = sizeof points / sizeof points[0];
     int oldx = -1;
@@ -133,6 +179,8 @@ void* draw_thread(void* usr_info)
         VEC4(0.5f,-0.5f,0.75f,1)//11
         */
         
+        
+#if 1
         //Back
         pipeline(points,8,9,10,colors,sizeof(typeof(colors[0])),0,1,2);
         pipeline(points,8,10,11,colors,sizeof(typeof(colors[0])),0,1,2);
@@ -148,14 +196,15 @@ void* draw_thread(void* usr_info)
         //Left
         pipeline(points,5,9,10,colors,sizeof(typeof(colors[0])),0,1,2);
         pipeline(points,6,5,10,colors,sizeof(typeof(colors[0])),0,1,2);
+        //Front
+        pipeline(points,4,5,6,colors,sizeof(typeof(colors[0])),0,1,2);
+        pipeline(points,4,7,6,colors,sizeof(typeof(colors[0])),0,1,2);
         
+#endif
         //Right
         pipeline(points,4,8,11,colors,sizeof(typeof(colors[0])),0,1,2);
         pipeline(points,7,4,11,colors,sizeof(typeof(colors[0])),0,1,2);
-        //Front
-        pipeline(points,4,5,6,colors,sizeof(typeof(colors[0])),0,1,2);
         
-        pipeline(points,4,7,6,colors,sizeof(typeof(colors[0])),0,1,2);
         
 #if 0
         //background

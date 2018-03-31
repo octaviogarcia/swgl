@@ -84,7 +84,8 @@ void pipeline( Vec4* points,int index0,int index1,int index2,
 
 //TODO: convert these to function pointers ;)
 void* vertexShader( Vec4* vertex,void* attribute);
-Vec4 fragmentShader(float fragx,float fragy, Vec4 triangle[3],float lambda0,
+Vec4 fragmentShader(float fragx,float fragy,float fragz,
+                    Vec4 triangle[3],float lambda0,
                     float lambda1, float lambda2,void * vertexOut[3]);
 void UpdateScreenData(int width,int height);
 void clear_depth_buffer();

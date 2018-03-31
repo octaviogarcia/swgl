@@ -183,13 +183,16 @@ void draw_triangle( Vec4* points,int index1,int index2,int index3)
 
 XPoint to_screen_coords(float x,float y)
 {
-    float newx = 0.5f*x*scale_z/scale_x + 0.5f; //(x*scale_z+scale_x)/(2*scale_x)
-    float newy = 0.5f - 0.5f*y*scale_z/scale_y; //1.0 minus (y*scale_z+scale_y)/(2*scale_y)..
+    //float newx = 0.5f*x*scale_z/scale_x + 0.5f; //(x*scale_z+scale_x)/(2*scale_x)
+    //float newy = 0.5f - 0.5f*y*scale_z/scale_y; //1.0 minus (y*scale_z+scale_y)/(2*scale_y)..
+    
+    float newx = 0.5f*x+0.5f;
+    float newy = 0.5f - 0.5f*y;
     return (XPoint){.x=screen_img->width*newx,.y=screen_img->height*newy};
 }
 
 
-static void sort_counter_clockwise(Vec4 triangle[3])
+static bool sort_counter_clockwise(Vec4 triangle[3])
 {
     float centerx = triangle[0].x+triangle[1].x+triangle[2].x;
     float centery = triangle[0].y+triangle[1].y+triangle[2].y;
@@ -212,26 +215,25 @@ static void sort_counter_clockwise(Vec4 triangle[3])
         Vec4 tmp = triangle[0];
         triangle[0]=triangle[1];
         triangle[1]=tmp;
+        return true;
     }
-    return;
+    return false;
 }
 
 void pipeline( Vec4* points,int index0,int index1,int index2,
               void* attributes,int attributes_size,int aindex0,int aindex1,int aindex2)
 {
     Vec4 triangle[3]={points[index0],points[index1],points[index2]};
-    
-    
-    void* attribute0 = attributes+attributes_size*aindex0;
-    void* attribute1 = attributes+attributes_size*aindex1;
-    void* attribute2 = attributes+attributes_size*aindex2;
+    void* attribute[3]={
+        attributes+attributes_size*aindex0,
+        attributes+attributes_size*aindex1,
+        attributes+attributes_size*aindex2
+    };
     
     //use globals as uniforms?
-    void* vertexOut0 = vertexShader(&triangle[0],attribute0);//callback
-    void* vertexOut1 = vertexShader(&triangle[1],attribute1);//callback
-    void* vertexOut2 = vertexShader(&triangle[2],attribute2);//callback
-    
-    void* vertexOut[3] = {vertexOut0,vertexOut1,vertexOut2};
+    void* vertexOut0 = vertexShader(&triangle[0],attribute[0]);//callback
+    void* vertexOut1 = vertexShader(&triangle[1],attribute[1]);//callback
+    void* vertexOut2 = vertexShader(&triangle[2],attribute[2]);//callback
     
     
     //@HACK: is there a better way?
@@ -239,7 +241,18 @@ void pipeline( Vec4* points,int index0,int index1,int index2,
     //actually drawing with bayesian coordinates
     //so lambdas have proper positive values
     //https://stackoverflow.com/questions/6989100/sort-points-in-clockwise-order
-    sort_counter_clockwise(triangle);
+    if(sort_counter_clockwise(triangle))
+    {
+        void* tmp=attribute[0];
+        attribute[0]=attribute[1];
+        attribute[1]=tmp;
+        
+        tmp=vertexOut0;
+        vertexOut0=vertexOut1;
+        vertexOut1=tmp;
+    }
+    
+    void* vertexOut[3] = {vertexOut0,vertexOut1,vertexOut2};
     
     
     //Rasterize
@@ -358,7 +371,11 @@ void pipeline( Vec4* points,int index0,int index1,int index2,
                 
                 if(z<=0.02f) continue;
                 
-                Vec4 pixel_color = fragmentShader(x,y,triangle,lambda0,lambda1,lambda2,vertexOut);//callback
+                Vec4 pixel_color = fragmentShader(
+                    x,y,z,
+                    triangle,
+                    lambda0,lambda1,lambda2,
+                    vertexOut);//callback
                 
                 int32_t * pixels = (int32_t*)(screen_img->data);
                 {//alpha blend

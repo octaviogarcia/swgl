@@ -36,6 +36,29 @@ float dotProduct( Vec4 v1, Vec4 v2)
     return v1.x*v2.x+v1.y*v2.y+v1.z*v2.z+v1.w*v2.w;
 }
 
+float dotProductV3(Vec4 v1,Vec4 v2)
+{
+    v1.w = 0;
+    return dotProduct(v1,v2);
+}
+
+
+float length(Vec4 v)
+{
+    return sqrt(dotProduct(v,v));
+}
+
+float lengthV3(Vec4 v)
+{
+    v.w = 0;
+    return length(v);
+}
+
+Vec4 normalizeV3(Vec4 v)
+{
+    float length = lengthV3(v);
+    return VEC4(v.x/length,v.y/length,v.z/length,1);
+}
 Vec4 add( Vec4 v1, Vec4 v2)
 {
     return VEC4(v1.x+v2.x,v1.y+v2.y,v1.z+v2.z,v1.w+v2.w);
@@ -66,7 +89,6 @@ Vec4 crossProduct( Vec4 v1, Vec4 v2)
     x2*z1 - x1*z2
     x1*y2 - x2*y1
     */
-    _mm_crc32_u8(32,254);
     
     float x1=v1.x;
     float y1=v1.y;
@@ -77,6 +99,7 @@ Vec4 crossProduct( Vec4 v1, Vec4 v2)
     
     return VEC4(y1*z2-y2*z1,x2*z1-x1*z2,x1*y2-x2*y1,1.0);
 }
+
 
 int32_t max(int32_t a,int32_t b)
 {

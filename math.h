@@ -19,6 +19,7 @@ typedef struct Vec4
 
 Vec4 crossProduct( Vec4 v1, Vec4 v2);
 float dotProduct( Vec4 v1, Vec4 v2);
+float dotProductV3(Vec4 v1,Vec4 v2);
 Vec4 apply_matrix4x4(float matrix[4][4], Vec4 v);
 void matrixProduct(float matrix1[4][4],float matrix2[4][4]);
 
@@ -33,4 +34,10 @@ float minf(float a,float b);
 
 Vec4 add( Vec4 v1, Vec4 v2);
 Vec4 scale(float s, Vec4 v);
+
+
+float length(Vec4 v);
+float lengthV3(Vec4 v);
+Vec4 normalizeV3(Vec4 v);
+
 #endif
