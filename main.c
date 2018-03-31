@@ -13,7 +13,6 @@
 #include "draw.h"
 #include "math.h"
 //TODO: proper projection, with FOV and everythig
-//backface of triangle not drawing? might be just the "background" being forward
 
 _Atomic bool close_program = false;
 _Atomic double dt = 1/30.0;
@@ -30,14 +29,12 @@ float perspective[4][4] = {
 void setPerspective(float fov,float aspect,float near,float far)
 {
     
-#if 0
     float f =  1.0f/tan((PI / 180.0f)*fov/2.0f);
     perspective[0][0]=f/aspect;
     perspective[1][1]=f;
-    perspective[2][2]=far/(far-near);
-    perspective[2][3]=1.0f;
-    perspective[3][2]=-near*far/(far-near);//??
-#endif
+    //perspective[2][2]=far/(far-near);
+    //perspective[2][3]=1.0f;
+    //perspective[3][2]=-near*far/(far-near);//??
     
     return;
 }
@@ -83,7 +80,6 @@ Vec4 fragmentShader(float fragx,float fragy, Vec4 triangle[3],float lambda0,floa
 }
 void* draw_thread(void* usr_info)
 {
-    setPerspective(120.0f,9.0f/16.0f,0.1f,10.0f);
     
     Vec4 points[] = { 
         VEC4(2,2,2,1), //0
@@ -117,7 +113,10 @@ void* draw_thread(void* usr_info)
         
         clear_all_buffers();
         
+        float aspect = screen_img->height;
+        aspect/=screen_img->width;
         
+        setPerspective(90,aspect,0.1f,10.0f);
         
         
         
@@ -133,7 +132,6 @@ void* draw_thread(void* usr_info)
         VEC4(-0.5f,-0.5f,0.75f,1),//10
         VEC4(0.5f,-0.5f,0.75f,1)//11
         */
-        
         
         //Back
         pipeline(points,8,9,10,colors,sizeof(typeof(colors[0])),0,1,2);
@@ -154,16 +152,17 @@ void* draw_thread(void* usr_info)
         //Right
         pipeline(points,4,8,11,colors,sizeof(typeof(colors[0])),0,1,2);
         pipeline(points,7,4,11,colors,sizeof(typeof(colors[0])),0,1,2);
-        
         //Front
         pipeline(points,4,5,6,colors,sizeof(typeof(colors[0])),0,1,2);
-        pipeline(points,4,6,7,colors,sizeof(typeof(colors[0])),0,1,2);
         
+        pipeline(points,4,7,6,colors,sizeof(typeof(colors[0])),0,1,2);
         
+#if 0
         //background
         transform=&identity;
         pipeline(points,0,1,2,colors,sizeof(typeof(colors[0])),3,3,3);
         pipeline(points,0,2,3,colors,sizeof(typeof(colors[0])),3,3,3);
+#endif
         
         
         

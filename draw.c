@@ -84,11 +84,12 @@ void clear_image()
 void clear_all_buffers()
 {
     int buffer_size = screen_img->width*screen_img->height;
+    int32_t* data = (int32_t*)screen_img->data;
     
     for(int i = 0;i<buffer_size;++i)
     {
         depth_buffer[i]=1.0f/0.0f;
-        screen_img->data[i]=0;
+        data[i]=0;
     }
 }
 
@@ -187,6 +188,34 @@ XPoint to_screen_coords(float x,float y)
     return (XPoint){.x=screen_img->width*newx,.y=screen_img->height*newy};
 }
 
+
+static void sort_counter_clockwise(Vec4 triangle[3])
+{
+    float centerx = triangle[0].x+triangle[1].x+triangle[2].x;
+    float centery = triangle[0].y+triangle[1].y+triangle[2].y;
+    centerx/=3.0f;
+    centery/=3.0f;
+    
+    float center_to_a_x = triangle[0].x - centerx;
+    float center_to_a_y = triangle[0].y - centery;
+    float center_to_b_x = triangle[1].x - centerx;
+    float center_to_b_y = triangle[1].y - centery;
+    
+    //by sine law, if its negative, the angle goes "downwards" i.e. clockwise
+    float cross_product = 
+        center_to_a_x*center_to_b_y -
+        center_to_a_y*center_to_b_x;
+    
+    //swap em
+    if(cross_product<0) 
+    {
+        Vec4 tmp = triangle[0];
+        triangle[0]=triangle[1];
+        triangle[1]=tmp;
+    }
+    return;
+}
+
 void pipeline( Vec4* points,int index0,int index1,int index2,
               void* attributes,int attributes_size,int aindex0,int aindex1,int aindex2)
 {
@@ -204,6 +233,13 @@ void pipeline( Vec4* points,int index0,int index1,int index2,
     
     void* vertexOut[3] = {vertexOut0,vertexOut1,vertexOut2};
     
+    
+    //@HACK: is there a better way?
+    //sort counter clockwise... when we are 
+    //actually drawing with bayesian coordinates
+    //so lambdas have proper positive values
+    //https://stackoverflow.com/questions/6989100/sort-points-in-clockwise-order
+    sort_counter_clockwise(triangle);
     
     
     //Rasterize
