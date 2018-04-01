@@ -217,23 +217,30 @@ static bool sort_counter_clockwise(Vec4 triangle[3])
         triangle[1]=tmp;
         return true;
     }
+    
     return false;
 }
-
 void pipeline( Vec4* points,int index0,int index1,int index2,
               void* attributes,int attributes_size,int aindex0,int aindex1,int aindex2)
 {
+    //copy
     Vec4 triangle[3]={points[index0],points[index1],points[index2]};
-    void* attribute[3]={
-        attributes+attributes_size*aindex0,
-        attributes+attributes_size*aindex1,
-        attributes+attributes_size*aindex2
-    };
     
-    //use globals as uniforms?
-    void* vertexOut0 = vertexShader(&triangle[0],attribute[0]);//callback
-    void* vertexOut1 = vertexShader(&triangle[1],attribute[1]);//callback
-    void* vertexOut2 = vertexShader(&triangle[2],attribute[2]);//callback
+    //copy manually... -_-
+    char att0[attributes_size];
+    char att1[attributes_size];
+    char att2[attributes_size];
+    memcpy(att0,attributes+attributes_size*aindex0,attributes_size);
+    memcpy(att1,attributes+attributes_size*aindex1,attributes_size);
+    memcpy(att2,attributes+attributes_size*aindex2,attributes_size);
+    
+    void* attribute[3] = {(void*)att0,(void*)att1,(void*)att2};
+    
+    //use globals as uniforms
+    
+    void* vertexOut0 = vertexShader(triangle,attribute,0);//callback
+    void* vertexOut1 = vertexShader(triangle,attribute,1);//callback
+    void* vertexOut2 = vertexShader(triangle,attribute,2);//callback
     
     
     //@HACK: is there a better way?

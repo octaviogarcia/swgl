@@ -83,7 +83,7 @@ void pipeline( Vec4* points,int index0,int index1,int index2,
               void* attributes,int attributes_size,int aindex0,int aindex1,int aindex2);
 
 //TODO: convert these to function pointers ;)
-void* vertexShader( Vec4* vertex,void* attribute);
+void* vertexShader(Vec4 triangle[3],void* attributes[3],int index);
 Vec4 fragmentShader(float fragx,float fragy,float fragz,
                     Vec4 triangle[3],float lambda0,
                     float lambda1, float lambda2,void * vertexOut[3]);

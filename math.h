@@ -40,4 +40,8 @@ float length(Vec4 v);
 float lengthV3(Vec4 v);
 Vec4 normalizeV3(Vec4 v);
 
+
+void transpose(float m[4][4],float result[4][4]);
+void inverse(float m[4][4],float result[4][4]);
+float determinant(float m[4][4]);
 #endif
