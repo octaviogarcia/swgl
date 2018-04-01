@@ -241,19 +241,6 @@ void pipeline( Vec4* points,int index0,int index1,int index2,
     //actually drawing with bayesian coordinates
     //so lambdas have proper positive values
     //https://stackoverflow.com/questions/6989100/sort-points-in-clockwise-order
-    if(sort_counter_clockwise(triangle))
-    {
-        void* tmp=attribute[0];
-        attribute[0]=attribute[1];
-        attribute[1]=tmp;
-        
-        tmp=vertexOut0;
-        vertexOut0=vertexOut1;
-        vertexOut1=tmp;
-    }
-    
-    void* vertexOut[3] = {vertexOut0,vertexOut1,vertexOut2};
-    
     
     //Rasterize
     //Make a fragment, sequencially for now
@@ -269,6 +256,32 @@ void pipeline( Vec4* points,int index0,int index1,int index2,
     //Should we do the same for too far?
     
     //needed for the z buffer, if we divide it by w you would get 1...
+    
+    triangle[0].x/=triangle[0].w;
+    triangle[0].y/=triangle[0].w;
+    
+    triangle[1].x/=triangle[1].w;
+    triangle[1].y/=triangle[1].w;
+    
+    triangle[2].x/=triangle[2].w;
+    triangle[2].y/=triangle[2].w;
+    
+    //found out you have to
+    //do this conversion afters its screen space,
+    //otherwise tight angles arent guaranteed to be converted
+    if(sort_counter_clockwise(triangle))
+    {
+        void* tmp=attribute[0];
+        attribute[0]=attribute[1];
+        attribute[1]=tmp;
+        
+        tmp=vertexOut0;
+        vertexOut0=vertexOut1;
+        vertexOut1=tmp;
+    }
+    
+    void* vertexOut[3] = {vertexOut0,vertexOut1,vertexOut2};
+    
     float t0z = triangle[0].z;
     float t1z = triangle[1].z;
     float t2z = triangle[2].z;
@@ -277,22 +290,15 @@ void pipeline( Vec4* points,int index0,int index1,int index2,
     float t1w = triangle[1].w;
     float t2w = triangle[2].w;
     
-    triangle[0].x/=t0w;
-    triangle[0].y/=t0w;
     triangle[0].z/=t0w;
-    triangle[0].w=1;
-    
-    
-    triangle[1].x/=t1w;
-    triangle[1].y/=t1w;
     triangle[1].z/=t1w;
-    triangle[1].w=1;
-    
-    
-    triangle[2].x/=t2w;
-    triangle[2].y/=t2w;
     triangle[2].z/=t2w;
+    triangle[0].w=1;
+    triangle[1].w=1;
     triangle[2].w=1;
+    
+    
+    
     
     
     float t0x = triangle[0].x;

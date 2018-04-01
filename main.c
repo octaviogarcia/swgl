@@ -13,7 +13,6 @@
 #include "draw.h"
 #include "math.h"
 //TODO: proper projection, with FOV and everythig
-//FIX triangles not drawing with tight viewing angles...
 
 _Atomic bool close_program = false;
 _Atomic double dt = 1/30.0;
@@ -63,8 +62,9 @@ void* vertexShader(Vec4* vertex,void* attribute)
 }
 
 Vec4 LightPos = VEC4(0.75f,0.75f,0.15f,1);
-Vec4 LightColor = VEC4(2,2,2,2);
-float ambient = 0.2f;
+Vec4 LightColor = VEC4(1,1,1,1);
+float LightStrength = 3.0f;
+float ambient = 0.05f;
 
 Vec4 fragmentShader(float fragx,float fragy,float fragz, Vec4 triangle[3],float lambda0,float lambda1, float lambda2,void * vertexOut[3])
 {
@@ -89,7 +89,7 @@ Vec4 fragmentShader(float fragx,float fragy,float fragz, Vec4 triangle[3],float 
     lightDir.w = 1;
     
     float diff = maxf(dotProductV3(normal,lightDir),0.0f);
-    Vec4 diffused = scale(diff,LightColor);
+    Vec4 diffused = scale(diff*LightStrength,LightColor);
     
     Vec4 result;
     
@@ -105,7 +105,7 @@ Vec4 fragmentShader(float fragx,float fragy,float fragz, Vec4 triangle[3],float 
         result = add(scaled0,add(scaled1,scaled2));
     }
 #else
-    result = VEC4(1,0.5f,0,1);
+    result = VEC4(0.5f,0.5f,0.5f,1);
 #endif
     result = scale(ambient,result);
     result.w/=ambient;
@@ -179,7 +179,6 @@ void* draw_thread(void* usr_info)
         VEC4(0.5f,-0.5f,0.75f,1)//11
         */
         
-        
 #if 1
         //Back
         pipeline(points,8,9,10,colors,sizeof(typeof(colors[0])),0,1,2);
@@ -200,10 +199,12 @@ void* draw_thread(void* usr_info)
         pipeline(points,4,5,6,colors,sizeof(typeof(colors[0])),0,1,2);
         pipeline(points,4,7,6,colors,sizeof(typeof(colors[0])),0,1,2);
         
-#endif
         //Right
         pipeline(points,4,8,11,colors,sizeof(typeof(colors[0])),0,1,2);
         pipeline(points,7,4,11,colors,sizeof(typeof(colors[0])),0,1,2);
+        
+#endif
+        
         
         
 #if 0
@@ -317,7 +318,6 @@ int main (int argc,char ** argv)
         }
         
         
-        
         if (event.type==KeyPress)  
         {
             KeyCode keycode = event.xkey.keycode;
@@ -327,6 +327,7 @@ int main (int argc,char ** argv)
             
             float cos_angle = cos(deltaangle);
             float sin_angle = sin(deltaangle);
+            
             float anticlockwise[4][4] = 
             {
                 {cos_angle,-sin_angle,0.0f,0.0f},
@@ -350,6 +351,8 @@ int main (int argc,char ** argv)
                 {sin_angle,0.0f,cos_angle ,0.0f},
                 {0.0f     ,0.0f,      0.0f,1.0f}
             };
+            
+            
             float zclockwise[4][4] = 
             {
                 {cos_angle,0.0f,sin_angle,0.0f},
@@ -357,6 +360,7 @@ int main (int argc,char ** argv)
                 {-sin_angle,0.0f,cos_angle ,0.0f},
                 {0.0f     ,0.0f,      0.0f,1.0f}
             };
+            
             
             pthread_mutex_lock(&img_data_lock);
             if (keycode == XKeysymToKeycode(dis, XK_F1)) 
